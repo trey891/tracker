@@ -21,6 +21,16 @@ function d(v: string | null | undefined): Date | null {
 }
 
 async function main() {
+  // Safe to run on every deploy: if the database already has a project we skip,
+  // so in-app edits are never wiped. Set SEED_FORCE=1 to reseed regardless.
+  if (!process.env.SEED_FORCE) {
+    const existing = await prisma.project.count();
+    if (existing > 0) {
+      console.log(`Database already has ${existing} project(s); skipping seed (set SEED_FORCE=1 to override).`);
+      return;
+    }
+  }
+
   const data: Json = JSON.parse(
     readFileSync(join(process.cwd(), "prisma", "seed-data.json"), "utf8"),
   );

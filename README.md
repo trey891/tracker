@@ -69,20 +69,32 @@ All share the `SEED_PASSWORD` from your `.env` (default `pulse-changeme-2026`).
 
 ---
 
-## Deploy to Vercel
+## Deploy to Vercel (shareable team URL)
 
-1. Create a Postgres database (Supabase, Neon, or Vercel Postgres) and copy its
-   connection string.
-2. Import this repo into Vercel. Set environment variables:
-   - `DATABASE_URL` — the hosted Postgres URL
-   - `AUTH_SECRET` — `openssl rand -base64 32`
-   - `SEED_PASSWORD` — a strong shared password (used once to seed)
-3. Deploy. Then run the schema push + seed once against the hosted DB, e.g.
-   locally with the production `DATABASE_URL` exported:
-   ```bash
-   npm run db:push && npm run db:seed
-   ```
-   (`npm run build` runs `prisma generate` automatically.)
+The deploy is **self-seeding**: `vercel.json` runs `npm run vercel-build`, which
+generates the Prisma client, pushes the schema, seeds the workbook data **only
+if the database is empty**, then builds. So there are no manual database
+commands — you just supply two connection strings and two secrets.
+
+1. **Create a Postgres database** — [Neon](https://neon.tech) or
+   [Supabase](https://supabase.com) (free tier). Copy **both** connection
+   strings it gives you: the **pooled** one and the **direct** one.
+2. **Import the repo into [Vercel](https://vercel.com)** → New Project →
+   `trey891/tracker`. Add these environment variables:
+   | Variable | Value |
+   |----------|-------|
+   | `DATABASE_URL` | the **pooled** Postgres URL |
+   | `DIRECT_URL` | the **direct** Postgres URL (used to push schema + seed) |
+   | `AUTH_SECRET` | a random string — `openssl rand -base64 32` |
+   | `SEED_PASSWORD` | the shared password for seeded team logins |
+3. **Deploy.** First deploy creates the schema and loads all workbook data
+   automatically. Subsequent deploys detect existing data and skip seeding, so
+   in-app edits are never overwritten.
+4. Open your Vercel URL and sign in as `dewallette@gmail.com` with
+   `SEED_PASSWORD`.
+
+> Re-seeding intentionally: set `SEED_FORCE=1` (env var) for one deploy to wipe
+> and reload the seeded project. Remove it afterwards.
 
 ---
 

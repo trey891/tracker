@@ -8,8 +8,12 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Direct (non-pooled) connection used for schema push / migrations. For a
+  // pooled provider like Neon/Supabase set this to the DIRECT connection string;
+  // for a plain local Postgres set it equal to DATABASE_URL.
+  directUrl = env("DIRECT_URL")
 }
 
 // ---- Auth / team ----------------------------------------------------------
