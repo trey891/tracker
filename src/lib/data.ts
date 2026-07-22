@@ -1,15 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { STATUSES, WORKSTREAMS, type Status } from "@/lib/constants";
+import { getCurrentProject, getCurrentProjectId } from "@/lib/project";
 
-// The app is multi-project; for now we operate on the first (only) project.
-// Swap this for a route param / project switcher when more are added.
+// Multi-project: pages resolve the "current" project from the switcher cookie
+// (falls back to the first project). These aliases keep call sites stable.
 export async function getPrimaryProject() {
-  return prisma.project.findFirst({ orderBy: { createdAt: "asc" } });
+  return getCurrentProject();
 }
 
 export async function getPrimaryProjectId(): Promise<string | null> {
-  const p = await prisma.project.findFirst({ orderBy: { createdAt: "asc" }, select: { id: true } });
-  return p?.id ?? null;
+  return getCurrentProjectId();
 }
 
 export async function getLatestFinancials(projectId: string) {

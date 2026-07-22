@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "./Logo";
+import { ProjectSwitcher } from "./ProjectSwitcher";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: "grid" },
@@ -33,7 +34,13 @@ function Icon({ name }: { name: string }) {
   }
 }
 
-export function Sidebar() {
+export function Sidebar({
+  projects,
+  currentProjectId,
+}: {
+  projects: { id: string; name: string; code: string | null }[];
+  currentProjectId: string | null;
+}) {
   const pathname = usePathname();
   return (
     <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 flex-col border-r border-line bg-panel/60 md:flex">
@@ -45,7 +52,9 @@ export function Sidebar() {
         </div>
       </div>
 
-      <nav className="mt-2 flex-1 space-y-1 px-3">
+      {projects.length > 0 && <ProjectSwitcher projects={projects} currentId={currentProjectId} />}
+
+      <nav className="mt-1 flex-1 space-y-1 px-3">
         {NAV.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
           return (

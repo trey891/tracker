@@ -4,6 +4,7 @@ import { getPrimaryProject } from "@/lib/data";
 import { Topbar } from "@/components/Topbar";
 import { NoProject } from "@/components/EmptyState";
 import { Donut } from "@/components/Charts";
+import { AddAllowanceButton, AllowanceActions } from "@/components/PcoEditors";
 import { money, pct } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -135,9 +136,12 @@ export default async function PcoLogPage() {
             <span className="eyebrow">Exhibit F</span>
             <h2 className="mt-1 text-lg font-semibold text-white">Owner allowance usage</h2>
           </div>
-          <div className="text-right text-sm">
-            <div className="text-slate-400">Used {money(usedAllow, { compact: true })} of {money(totalAllow, { compact: true })}</div>
-            <div className="text-status-ontrack">{money(totalAllow - usedAllow, { compact: true })} remaining</div>
+          <div className="flex items-center gap-4">
+            <div className="text-right text-sm">
+              <div className="text-slate-400">Used {money(usedAllow, { compact: true })} of {money(totalAllow, { compact: true })}</div>
+              <div className="text-status-ontrack">{money(totalAllow - usedAllow, { compact: true })} remaining</div>
+            </div>
+            <AddAllowanceButton />
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -149,6 +153,7 @@ export default async function PcoLogPage() {
                 <th className="px-4 py-3 text-right font-medium">Used</th>
                 <th className="px-4 py-3 text-right font-medium">Balance</th>
                 <th className="px-4 py-3 font-medium">PC Reference</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
@@ -159,6 +164,7 @@ export default async function PcoLogPage() {
                   <td className="px-4 py-3 text-right text-slate-400">{money(a.used)}</td>
                   <td className={`px-4 py-3 text-right font-medium ${a.balance > 0 ? "text-status-ontrack" : "text-slate-500"}`}>{money(a.balance)}</td>
                   <td className="max-w-[200px] truncate px-4 py-3 text-slate-500" title={a.pcReference ?? ""}>{a.pcReference ?? "—"}</td>
+                  <td className="px-3 py-3"><AllowanceActions allowance={a} /></td>
                 </tr>
               ))}
             </tbody>

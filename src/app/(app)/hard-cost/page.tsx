@@ -4,8 +4,27 @@ import { getPrimaryProject, getLatestFinancials } from "@/lib/data";
 import { Topbar } from "@/components/Topbar";
 import { NoProject } from "@/components/EmptyState";
 import { money, pct, shortDate } from "@/lib/format";
+import {
+  EditFinancialsButton,
+  AddCommitmentButton,
+  CommitmentActions,
+  AddMilestoneButton,
+  MilestoneActions,
+} from "@/components/HardCostEditors";
 
 export const dynamic = "force-dynamic";
+
+const iso = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : null);
+const FIN_KEYS = [
+  "originalBudget", "approvedChanges", "reallocationsFromTI", "currentBudget", "commitments",
+  "nonContractedInvoiced", "ffeAllowance", "currentCommitments", "uncommittedBudget", "costsToDate",
+  "unspentCommitments", "allowances", "pendingCosPcos", "forecasted", "overUnderBeforeContingency",
+  "projectedFinalCost", "contingencyNeeded", "contingencyBalance", "trendingContingencyAtCompletion",
+  "contractorContingency", "pcosApprovedPendingCo", "pcosApprovedPendingCoQty", "pcosPending",
+  "pcosPendingQty", "totalPcos", "totalPcosQty", "cosApproved", "cosApprovedQty", "totalCos",
+  "totalCosQty", "softCostBudget", "softCostCommitments", "softCostContingency", "softCostUncommitted",
+  "softCostContingencyBalance", "equityBudget", "equityRequested", "loanBudget", "loanRequested",
+] as const;
 
 export default async function HardCostPage() {
   const session = await auth();
@@ -26,12 +45,25 @@ export default async function HardCostPage() {
   ]);
 
   const f = fin;
+  const finInitial = Object.fromEntries(FIN_KEYS.map((k) => [k, (f as Record<string, number | null> | null)?.[k] ?? null]));
+  const commitmentDtos = commitments.map((c) => ({
+    id: c.id, vendor: c.vendor, contract: c.contract, status: c.status,
+    startDate: iso(c.startDate), endDate: iso(c.endDate),
+    originalContract: c.originalContract, changeOrderAmount: c.changeOrderAmount, totalContract: c.totalContract,
+    pendingCos: c.pendingCos, invoiced: c.invoiced, remaining: c.remaining,
+  }));
+  const milestoneDtos = milestones.map((m) => ({
+    id: m.id, seq: m.seq, description: m.description,
+    baseDate: iso(m.baseDate), contractDate: iso(m.contractDate), currentDate: iso(m.currentDate), varianceDays: m.varianceDays,
+  }));
+
   return (
     <>
       <Topbar
         title="Hard Cost"
         subtitle={`${project.name} · #${project.code} · as of ${f?.asOfDate ? shortDate(f.asOfDate) : "—"}`}
         user={session?.user ?? {}}
+        action={<EditFinancialsButton initial={finInitial} asOfDate={iso(f?.asOfDate ?? null)} />}
       />
 
       {/* Budget waterfall */}
@@ -99,7 +131,10 @@ export default async function HardCostPage() {
             <span className="eyebrow">Commitments register</span>
             <h2 className="mt-1 text-lg font-semibold text-white">Vendor contracts</h2>
           </div>
-          <span className="text-sm text-slate-500">{commitments.length} vendors</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-slate-500">{commitments.length} vendors</span>
+            <AddCommitmentButton />
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[860px] text-left text-sm">
@@ -112,10 +147,11 @@ export default async function HardCostPage() {
                 <th className="px-4 py-3 text-right font-medium">Total</th>
                 <th className="px-4 py-3 text-right font-medium">Invoiced</th>
                 <th className="px-4 py-3 text-right font-medium">Remaining</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
-              {commitments.map((c) => (
+              {commitmentDtos.map((c) => (
                 <tr key={c.id} className="border-b border-line/50 hover:bg-panel-2/40">
                   <td className="px-5 py-3 font-medium text-white">{c.vendor}</td>
                   <td className="max-w-[220px] truncate px-4 py-3 text-slate-400" title={c.contract ?? ""}>{c.contract ?? "—"}</td>
@@ -124,6 +160,7 @@ export default async function HardCostPage() {
                   <td className="px-4 py-3 text-right font-medium text-white">{money(c.totalContract, { compact: true })}</td>
                   <td className="px-4 py-3 text-right text-slate-300">{money(c.invoiced, { compact: true })}</td>
                   <td className="px-4 py-3 text-right text-status-ontrack">{money(c.remaining, { compact: true })}</td>
+                  <td className="px-3 py-3"><CommitmentActions commitment={c} /></td>
                 </tr>
               ))}
             </tbody>
@@ -133,9 +170,12 @@ export default async function HardCostPage() {
 
       {/* Milestones */}
       <section className="card mt-4 overflow-hidden">
-        <div className="px-5 py-4">
-          <span className="eyebrow">Schedule</span>
-          <h2 className="mt-1 text-lg font-semibold text-white">Milestones &amp; major activities</h2>
+        <div className="flex items-center justify-between px-5 py-4">
+          <div>
+            <span className="eyebrow">Schedule</span>
+            <h2 className="mt-1 text-lg font-semibold text-white">Milestones &amp; major activities</h2>
+          </div>
+          <AddMilestoneButton />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-left text-sm">
@@ -146,10 +186,11 @@ export default async function HardCostPage() {
                 <th className="px-4 py-3 font-medium">Contract</th>
                 <th className="px-4 py-3 font-medium">Current</th>
                 <th className="px-4 py-3 text-right font-medium">Variance</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
             <tbody>
-              {milestones.map((m) => (
+              {milestoneDtos.map((m) => (
                 <tr key={m.id} className="border-b border-line/50 hover:bg-panel-2/40">
                   <td className="px-5 py-3 font-medium text-white">{m.description}</td>
                   <td className="px-4 py-3 text-slate-400">{shortDate(m.baseDate)}</td>
@@ -158,6 +199,7 @@ export default async function HardCostPage() {
                   <td className={`px-4 py-3 text-right font-medium ${(m.varianceDays ?? 0) > 0 ? "text-status-blocked" : (m.varianceDays ?? 0) < 0 ? "text-status-ontrack" : "text-slate-400"}`}>
                     {m.varianceDays == null ? "—" : m.varianceDays > 0 ? `+${m.varianceDays}d` : m.varianceDays < 0 ? `${m.varianceDays}d` : "on time"}
                   </td>
+                  <td className="px-3 py-3"><MilestoneActions milestone={m} /></td>
                 </tr>
               ))}
             </tbody>

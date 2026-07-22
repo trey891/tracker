@@ -12,6 +12,7 @@ import { StatCard } from "@/components/StatCard";
 import { StackedStatusChart, Donut } from "@/components/Charts";
 import { StatusBadge, PriorityBadge, WorkstreamTag } from "@/components/Badges";
 import { NoProject } from "@/components/EmptyState";
+import { DashboardActions } from "@/components/DashboardActions";
 import { money, pct, dueLabel } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -60,11 +61,7 @@ export default async function DashboardPage() {
         title="Dashboard"
         subtitle="At-a-glance health across every workstream"
         user={session?.user ?? {}}
-        action={
-          <Link href="/tasks?new=1" className="btn-primary">
-            + New Task
-          </Link>
-        }
+        action={<DashboardActions />}
       />
 
       <p className="mb-5 text-sm text-slate-400">
