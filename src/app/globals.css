@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #0a0b0f;
+  color: #e6e8ee;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle scrollbars to match the dark canvas */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a2f3d transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2a2f3d;
+  border-radius: 8px;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-line bg-panel/80 shadow-card;
+  }
+  .card-pad {
+    @apply p-5;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-wider text-slate-400;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ring-1;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-white hover:bg-brand-soft;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-panel-2 text-slate-200 hover:border-slate-500;
+  }
+  .input {
+    @apply w-full rounded-lg border border-line bg-panel-2 px-3 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-brand;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium text-slate-400;
+  }
+}
