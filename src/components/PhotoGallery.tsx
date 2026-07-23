@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteAttachment, updatePhoto } from "@/app/(app)/attachment-actions";
+import { isNative, takePhoto } from "@/lib/native";
 
 export type PhotoMeta = {
   id: string;
@@ -33,6 +34,16 @@ export function PhotoGallery({ photos, readOnly }: { photos: PhotoMeta[]; readOn
   const [editing, setEditing] = useState<PhotoMeta | null>(null);
   const [view, setView] = useState<"dates" | "all">("dates");
   const [openDay, setOpenDay] = useState<string | null>(null);
+  const [native, setNative] = useState(false);
+  useEffect(() => setNative(isNative()), []);
+
+  async function capture() {
+    const f = await takePhoto();
+    if (f) {
+      setFiles((prev) => [...prev, f]);
+      setDescs((prev) => [...prev, ""]);
+    }
+  }
 
   // Group photos into days, newest day first (photos prop is already sorted).
   const days = useMemo(() => {
@@ -110,9 +121,20 @@ export function PhotoGallery({ photos, readOnly }: { photos: PhotoMeta[]; readOn
             <label className="label">Date taken</label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input" />
           </div>
-          <button onClick={upload} disabled={uploading} className="btn-primary">
-            {uploading ? "Uploading…" : files.length > 0 ? `Upload ${files.length}` : "Choose photos"}
-          </button>
+          <div className="flex gap-2">
+            {native && (
+              <button onClick={capture} disabled={uploading} className="btn-ghost" title="Use the camera">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 8h3l2-2h6l2 2h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+                  <circle cx="12" cy="13" r="3" />
+                </svg>
+                Take photo
+              </button>
+            )}
+            <button onClick={upload} disabled={uploading} className="btn-primary">
+              {uploading ? "Uploading…" : files.length > 0 ? `Upload ${files.length}` : native ? "Choose" : "Choose photos"}
+            </button>
+          </div>
         </div>
 
         {/* Per-photo descriptions */}

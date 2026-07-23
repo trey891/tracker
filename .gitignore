@@ -13,3 +13,10 @@ next-env.d.ts
 /prisma/*.db-journal
 .tsbuildinfo
 *.tsbuildinfo
+
+# Capacitor / iOS build artifacts (the ios/ project is generated on a Mac)
+/ios/App/Pods/
+/ios/App/App/public/
+/ios/App/App/capacitor.config.json
+/ios/App/build/
+DerivedData/

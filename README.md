@@ -116,6 +116,46 @@ natural next step.
 
 ---
 
+## iOS app (Capacitor)
+
+The app is packaged for iOS with [Capacitor](https://capacitorjs.com) as a thin
+native shell that loads the deployed site and adds **native camera** (progress
+photos) and **push notifications**. Because the app is server-rendered it can't
+be statically exported, so the shell points at your live URL.
+
+**Requirements:** an Apple Developer account ($99/yr), and either a Mac with
+Xcode *or* a cloud iOS build service (EAS, Codemagic). The `ios/` Xcode project
+is generated on the Mac — it isn't committed.
+
+### Generate & run the iOS project (on a Mac)
+```bash
+npm install
+export CAP_SERVER_URL="https://your-app.vercel.app"   # your production URL
+npm run cap:add-ios      # creates ios/ (one time)
+npm run cap:sync         # copies config + plugins
+npm run cap:open         # opens Xcode
+```
+In Xcode: set your Team under **Signing & Capabilities**, add the **Push
+Notifications** capability and **Background Modes → Remote notifications**, then
+Run on a device (push doesn't work in the simulator). `Info.plist` will need
+`NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription` strings (Xcode
+prompts, or add them once).
+
+### Enable push notifications (optional)
+1. In the Apple Developer portal create an **APNs Auth Key** (`.p8`), note the
+   Key ID and your Team ID.
+2. Add `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_BUNDLE_ID`, `APNS_KEY_P8`, and
+   `APNS_PRODUCTION` to your server env (Vercel) — see `.env.example`.
+3. The app registers each device on sign-in (`/api/devices`); a push is sent
+   when a task moves to **Blocked**. Until the keys are set, push safely no-ops.
+
+### Distribution
+- **TestFlight** — free, install via a link; ideal for your own team.
+- **Apple Business Manager → Custom Apps** — a private, unlisted app for your
+  organization (the recommended long-term route for an internal tool).
+- Public App Store listing is only needed to sell it beyond your org; note
+  Apple's Guideline 4.2 — the native camera/push here help satisfy it.
+
 ## Scripts
 
 | Command | Does |

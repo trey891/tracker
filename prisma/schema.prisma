@@ -26,6 +26,21 @@ model User {
   access       String   @default("contributor") // admin | contributor | viewer
   passwordHash String
   createdAt    DateTime @default(now())
+
+  devices DeviceToken[]
+}
+
+// APNs/FCM device tokens for push notifications, one row per device per user.
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   @default("ios")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ---- Core project ---------------------------------------------------------

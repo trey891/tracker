@@ -5,9 +5,17 @@ import { prisma } from "@/lib/prisma";
 import { getPrimaryProjectId } from "@/lib/data";
 import { isStatus, isPriority, isWorkstream } from "@/lib/constants";
 import { requireAccess } from "@/lib/authz";
+import { sendPush } from "@/lib/push";
 
 // Contributors and the admin can change tasks; viewers cannot.
 const requireSession = () => requireAccess("contributor");
+
+// Fire a push when a task crosses into Blocked (no-op unless APNs is configured).
+async function notifyIfNewlyBlocked(id: string, prevStatus: string, newStatus: string) {
+  if (newStatus !== "Blocked" || prevStatus === "Blocked") return;
+  const t = await prisma.task.findUnique({ where: { id }, select: { title: true, blocker: true } });
+  if (t) await sendPush({ title: "Task blocked", body: `${t.title}${t.blocker ? ` — ${t.blocker}` : ""}` });
+}
 
 function parse(formData: FormData) {
   const title = String(formData.get("title") ?? "").trim();
@@ -55,7 +63,10 @@ export async function updateTask(formData: FormData) {
   await requireSession();
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("Missing id");
-  await prisma.task.update({ where: { id }, data: parse(formData) });
+  const prev = await prisma.task.findUnique({ where: { id }, select: { status: true } });
+  const data = parse(formData);
+  await prisma.task.update({ where: { id }, data });
+  await notifyIfNewlyBlocked(id, prev?.status ?? "", data.status);
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
   revalidatePath("/analytics");
@@ -75,7 +86,9 @@ export async function deleteTask(formData: FormData) {
 export async function setTaskStatus(id: string, status: string) {
   await requireSession();
   if (!isStatus(status)) throw new Error("Invalid status");
+  const prev = await prisma.task.findUnique({ where: { id }, select: { status: true } });
   await prisma.task.update({ where: { id }, data: { status } });
+  await notifyIfNewlyBlocked(id, prev?.status ?? "", status);
   revalidatePath("/tasks");
   revalidatePath("/dashboard");
   revalidatePath("/analytics");
