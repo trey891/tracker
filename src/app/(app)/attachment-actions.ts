@@ -36,6 +36,25 @@ export async function listAttachments(where: { taskId?: string; allowanceId?: st
   });
 }
 
+// Edit an existing photo's date taken and/or description.
+export async function updatePhoto(id: string, data: { takenDate?: string | null; description?: string | null }) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+  const projectId = await getCurrentProjectId();
+  if (!projectId) throw new Error("No project");
+
+  const patch: { takenDate?: Date | null; description?: string | null } = {};
+  if ("takenDate" in data) {
+    const raw = (data.takenDate ?? "").trim();
+    const d = raw ? new Date(raw) : null;
+    patch.takenDate = d && !Number.isNaN(d.getTime()) ? d : null;
+  }
+  if ("description" in data) patch.description = (data.description ?? "").trim() || null;
+
+  await prisma.attachment.updateMany({ where: { id, projectId, kind: "photo" }, data: patch });
+  revalidatePath("/photos");
+}
+
 // Persist descriptions entered in the PDF photo picker before generating.
 export async function savePhotoDescriptions(updates: { id: string; description: string }[]) {
   const session = await auth();

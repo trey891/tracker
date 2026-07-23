@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { deleteAttachment } from "@/app/(app)/attachment-actions";
+import { deleteAttachment, updatePhoto } from "@/app/(app)/attachment-actions";
 
 export type PhotoMeta = {
   id: string;
@@ -30,6 +30,7 @@ export function PhotoGallery({ photos }: { photos: PhotoMeta[] }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<PhotoMeta | null>(null);
+  const [editing, setEditing] = useState<PhotoMeta | null>(null);
   const [view, setView] = useState<"dates" | "all">("dates");
   const [openDay, setOpenDay] = useState<string | null>(null);
 
@@ -218,6 +219,16 @@ export function PhotoGallery({ photos }: { photos: PhotoMeta[] }) {
               {lightbox.description && <div className="text-sm text-slate-400">{lightbox.description}</div>}
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditing(lightbox);
+                  setLightbox(null);
+                }}
+                className="btn-ghost"
+              >
+                Edit
+              </button>
               <a href={`/api/attachments/${lightbox.id}?download=1`} className="btn-ghost" onClick={(e) => e.stopPropagation()}>
                 Download
               </a>
@@ -236,6 +247,64 @@ export function PhotoGallery({ photos }: { photos: PhotoMeta[] }) {
           <div className="text-center text-xs text-slate-500">Uploaded by {lightbox.uploadedBy ?? "—"}</div>
         </div>
       )}
+
+      {editing && (
+        <EditPhotoModal
+          photo={editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => {
+            setEditing(null);
+            router.refresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function EditPhotoModal({ photo, onClose, onSaved }: { photo: PhotoMeta; onClose: () => void; onSaved: () => void }) {
+  const [date, setDate] = useState(photo.takenDate ?? photo.createdAt.slice(0, 10));
+  const [desc, setDesc] = useState(photo.description ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await updatePhoto(photo.id, { takenDate: date, description: desc });
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+      <div className="card w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+          <h3 className="text-base font-semibold text-white">Edit photo</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+        </div>
+        <div className="space-y-4 p-5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/api/attachments/${photo.id}`} alt="" className="h-40 w-full rounded-lg object-cover" />
+          <div>
+            <label className="label">Date taken</label>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input" />
+          </div>
+          <div>
+            <label className="label">Description</label>
+            <input value={desc} onChange={(e) => setDesc(e.target.value)} className="input" placeholder="e.g. Level 3 glazing" maxLength={120} />
+          </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onClose} className="btn-ghost">
+              Cancel
+            </button>
+            <button type="button" onClick={save} disabled={saving} className="btn-primary">
+              {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

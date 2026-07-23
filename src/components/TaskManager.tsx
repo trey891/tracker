@@ -7,6 +7,7 @@ import { StatusBadge, PriorityBadge } from "./Badges";
 import { AttachmentManager } from "./AttachmentManager";
 import { MultiSelectFilter } from "./MultiSelectFilter";
 import { ScrollX } from "./ScrollX";
+import { isPastDue } from "@/lib/format";
 import { createTask, updateTask, deleteTask } from "@/app/(app)/tasks/actions";
 
 export type TaskDTO = {
@@ -123,8 +124,9 @@ export function TaskManager({
               </div>
               <div className="shrink-0"><StatusBadge status={t.status} /></div>
             </div>
-            <div className="mt-2 flex items-center gap-2">
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <PriorityBadge priority={t.priority} />
+              {isPastDue(t.deadline, t.status) && <span className="pill text-status-blocked bg-status-blocked/10 ring-status-blocked/30">Past due</span>}
               {t.blocker && <span className="truncate text-xs text-status-blocked">⚠ {t.blocker}</span>}
             </div>
             <div className="mt-3 flex gap-1 border-t border-line pt-2">
@@ -172,7 +174,16 @@ export function TaskManager({
                   </td>
                   <td className="px-4 py-3 text-slate-400">{t.workstream}</td>
                   <td className="px-4 py-3 text-slate-300">{t.lead ?? "—"}</td>
-                  <td className="px-4 py-3 text-slate-400">{t.deadline ?? "—"}</td>
+                  <td className="px-4 py-3">
+                    {isPastDue(t.deadline, t.status) ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="text-status-blocked">{t.deadline}</span>
+                        <span className="pill text-status-blocked bg-status-blocked/10 ring-status-blocked/30">Past due</span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">{t.deadline ?? "—"}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3"><PriorityBadge priority={t.priority} /></td>
                   <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
                   <td className="px-4 py-3 text-right">

@@ -32,6 +32,16 @@ export function fullDate(d: Date | string | null | undefined): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
+// A task is past due when its deadline is before today and it isn't complete.
+export function isPastDue(deadline: string | Date | null | undefined, status?: string): boolean {
+  if (!deadline || status === "Done") return false;
+  const d = typeof deadline === "string" ? new Date(deadline.length === 10 ? deadline + "T00:00:00" : deadline) : deadline;
+  if (Number.isNaN(d.getTime())) return false;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return d.getTime() < today.getTime();
+}
+
 // "4d overdue" / "in 3d" / "today" relative to now.
 export function dueLabel(d: Date | string | null | undefined): { text: string; overdue: boolean } | null {
   if (!d) return null;
