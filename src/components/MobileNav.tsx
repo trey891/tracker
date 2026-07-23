@@ -5,16 +5,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "./Logo";
 import { ProjectSwitcher } from "./ProjectSwitcher";
-import { PORTFOLIO_NAV, PROJECT_NAV, NavIcon } from "./Sidebar";
+import { PORTFOLIO_NAV, PROJECT_NAV, ADMIN_NAV, NavIcon } from "./Sidebar";
 
 // Phone navigation: fixed top bar with a hamburger opening a slide-over menu
 // (nav + project switcher). Hidden on md+ where the sidebar takes over.
 export function MobileNav({
   projects,
   currentProjectId,
+  isAdmin,
 }: {
   projects: { id: string; name: string; code: string | null }[];
   currentProjectId: string | null;
+  isAdmin?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -23,7 +25,7 @@ export function MobileNav({
   useEffect(() => setOpen(false), [pathname]);
 
   const current = projects.find((p) => p.id === currentProjectId) ?? projects[0];
-  const active = [...PORTFOLIO_NAV, ...PROJECT_NAV].find(
+  const active = [...PORTFOLIO_NAV, ...PROJECT_NAV, ...ADMIN_NAV].find(
     (i) => pathname === i.href || pathname.startsWith(i.href + "/"),
   );
 
@@ -80,6 +82,15 @@ export function MobileNav({
               {PROJECT_NAV.map((item) => (
                 <MobileLink key={item.href} item={item} pathname={pathname} />
               ))}
+
+              {isAdmin && (
+                <>
+                  <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-slate-600">Admin</div>
+                  {ADMIN_NAV.map((item) => (
+                    <MobileLink key={item.href} item={item} pathname={pathname} />
+                  ))}
+                </>
+              )}
             </nav>
           </div>
         </div>

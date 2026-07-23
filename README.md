@@ -116,6 +116,40 @@ natural next step.
 
 ---
 
+## Storage monitoring & weekly CSV archive
+
+The app stores everything — including progress photos and uploaded documents —
+as rows in Postgres, so **database size** is the single number that decides when
+you outgrow the free tier. Two features track and back that up:
+
+**Storage & cost monitoring** (`/settings`, admin only). A live readout of
+database size vs. the plan's storage allowance (default 0.5 GB = Neon free),
+attachment storage broken down by kind, and row counts. It turns amber at 80%
+and red at 100%, so you get warning before writes start failing. Adjust the
+threshold with `USAGE_LIMIT_MB` / `USAGE_WARN_PCT` when you move to a paid plan.
+
+**Weekly CSV archive email** — an off-platform backup. Every **Monday ~8 AM
+Central** (Vercel Cron → `/api/cron/weekly-export`) the app emails a CSV of all
+project data (tasks, cost tracking / PCOs, commitments, milestones, allowances,
+financials — **no images**) plus the storage summary above, as an early cost
+warning. Admins can also send it on demand from the Settings page.
+
+To enable the email:
+1. Create a free [Resend](https://resend.com) account. **Sign up with the same
+   email you want the archive sent to** — Resend lets you send from
+   `onboarding@resend.dev` to your own account address with no domain setup.
+2. Create an API key and set these on Vercel (see `.env.example`):
+   | Variable | Value |
+   |----------|-------|
+   | `RESEND_API_KEY` | your Resend API key |
+   | `EXPORT_EMAIL` | recipient (default `dewallette@gmail.com`) |
+   | `CRON_SECRET` | random string — `openssl rand -base64 32` (secures the cron endpoint) |
+3. Redeploy. Until `RESEND_API_KEY` is set, the export safely no-ops and the
+   Settings page shows "Not configured".
+
+> Vercel's free (Hobby) plan runs cron jobs at most once per day, so a weekly
+> schedule is well within limits.
+
 ## iOS app (Capacitor)
 
 The app is packaged for iOS with [Capacitor](https://capacitorjs.com) as a thin

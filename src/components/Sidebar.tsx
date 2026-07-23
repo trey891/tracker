@@ -17,6 +17,9 @@ export const PROJECT_NAV = [
   { href: "/analytics", label: "Analytics", icon: "chart" },
 ] as const;
 
+// Admin-only entries (storage/cost + backups).
+export const ADMIN_NAV = [{ href: "/settings", label: "Settings", icon: "gear" }] as const;
+
 export function NavIcon({ name }: { name: string }) {
   return <Icon name={name} />;
 }
@@ -40,6 +43,8 @@ function Icon({ name }: { name: string }) {
       return <svg {...common} viewBox="0 0 24 24"><path d="M3 21h18M5 21V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v16M13 21V9a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v12M8 8h.01M8 12h.01M8 16h.01" /></svg>;
     case "camera":
       return <svg {...common} viewBox="0 0 24 24"><path d="M4 8h3l2-2h6l2 2h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /><circle cx="12" cy="13" r="3" /></svg>;
+    case "gear":
+      return <svg {...common} viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>;
     default:
       return null;
   }
@@ -48,9 +53,11 @@ function Icon({ name }: { name: string }) {
 export function Sidebar({
   projects,
   currentProjectId,
+  isAdmin,
 }: {
   projects: { id: string; name: string; code: string | null }[];
   currentProjectId: string | null;
+  isAdmin?: boolean;
 }) {
   const pathname = usePathname();
   return (
@@ -74,6 +81,15 @@ export function Sidebar({
         {PROJECT_NAV.map((item) => (
           <NavLink key={item.href} item={item} pathname={pathname} />
         ))}
+
+        {isAdmin && (
+          <>
+            <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-wider text-slate-600">Admin</div>
+            {ADMIN_NAV.map((item) => (
+              <NavLink key={item.href} item={item} pathname={pathname} />
+            ))}
+          </>
+        )}
       </nav>
     </aside>
   );
