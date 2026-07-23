@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   PCO_STATUSES,
@@ -30,6 +30,21 @@ export type PcoDTO = {
   notes: string | null;
 };
 
+const BLANK = "(blank)";
+type SortKey =
+  | "number"
+  | "scope"
+  | "status"
+  | "value"
+  | "oco"
+  | "gcFunding"
+  | "creFunding"
+  | "contractorAllowance"
+  | "contractorContingency"
+  | "reason";
+
+const money0 = (n: number) => `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+
 export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
   const router = useRouter();
   const [rows, setRows] = useState<PcoDTO[]>(pcos);
@@ -37,19 +52,70 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
   const [status, setStatus] = useState<string[]>([...PCO_STATUSES]);
   const [funding, setFunding] = useState<string[]>([...CRE_FUNDING]);
   const [reason, setReason] = useState<string[]>([...PCO_REASONS]);
+  // header-only filters over data-derived values; null = no filter
+  const [ocoFilter, setOcoFilter] = useState<string[] | null>(null);
+  const [gcFilter, setGcFilter] = useState<string[] | null>(null);
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 } | null>(null);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<PcoDTO | null>(null);
 
   // keep local rows in sync if the server sends new props after refresh
   useMemo(() => setRows(pcos), [pcos]);
 
-  const filtered = rows.filter((p) => {
-    if (!status.includes(p.status)) return false;
-    if (!funding.includes(p.creFunding)) return false;
-    if (!reason.includes(p.reason)) return false;
-    if (q && !`${p.number ?? ""} ${p.scope} ${p.notes ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
-    return true;
-  });
+  const ocoOf = (p: PcoDTO) => p.oco?.trim() || BLANK;
+  const gcOf = (p: PcoDTO) => p.gcFunding?.trim() || BLANK;
+
+  const ocoOptions = useMemo(
+    () => [...new Set(rows.map(ocoOf))].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    [rows],
+  );
+  const gcOptions = useMemo(
+    () => [...new Set(rows.map(gcOf))].sort((a, b) => a.localeCompare(b)),
+    [rows],
+  );
+
+  function toggleSort(key: SortKey) {
+    setSort((s) => (s?.key !== key ? { key, dir: 1 } : s.dir === 1 ? { key, dir: -1 } : null));
+  }
+
+  const filtered = useMemo(() => {
+    const list = rows.filter((p) => {
+      if (!status.includes(p.status)) return false;
+      if (!funding.includes(p.creFunding)) return false;
+      if (!reason.includes(p.reason)) return false;
+      if (ocoFilter && !ocoFilter.includes(ocoOf(p))) return false;
+      if (gcFilter && !gcFilter.includes(gcOf(p))) return false;
+      if (q && !`${p.number ?? ""} ${p.scope} ${p.notes ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
+      return true;
+    });
+    if (sort) {
+      const { key, dir } = sort;
+      list.sort((a, b) => {
+        const av = a[key];
+        const bv = b[key];
+        if (av == null && bv == null) return 0;
+        if (av == null) return 1; // blanks last, regardless of direction
+        if (bv == null) return -1;
+        if (typeof av === "number" && typeof bv === "number") return (av - bv) * dir;
+        return String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: "base" }) * dir;
+      });
+    }
+    return list;
+  }, [rows, q, status, funding, reason, ocoFilter, gcFilter, sort]);
+
+  // dynamic totals over the visible rows
+  const sums = useMemo(
+    () =>
+      filtered.reduce(
+        (a, p) => ({
+          value: a.value + (p.value ?? 0),
+          allow: a.allow + (p.contractorAllowance ?? 0),
+          cont: a.cont + (p.contractorContingency ?? 0),
+        }),
+        { value: 0, allow: 0, cont: 0 },
+      ),
+    [filtered],
+  );
 
   function patchLocal(id: string, patch: Partial<PcoDTO>) {
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -116,6 +182,14 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
           </div>
         ))}
         {filtered.length === 0 && <p className="card p-6 text-center text-sm text-slate-500">No PCOs match your filters.</p>}
+        {filtered.length > 0 && (
+          <div className="card flex items-center justify-between p-4 text-sm font-semibold">
+            <span className="text-slate-300">
+              Total <span className="font-normal text-slate-500">· {filtered.length} shown</span>
+            </span>
+            <span className="tabular-nums text-white">{money0(sums.value)}</span>
+          </div>
+        )}
       </div>
 
       {/* Desktop: editable table */}
@@ -124,16 +198,47 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className="border-b border-line text-[11px] uppercase tracking-wide text-slate-500">
-                <th className="px-3 py-2 font-medium">PCO #</th>
-                <th className="px-3 py-2 font-medium">Scope</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 text-right font-medium">Value</th>
-                <th className="px-3 py-2 text-right font-medium">OCO</th>
-                <th className="px-3 py-2 font-medium">GC Funding</th>
-                <th className="px-3 py-2 font-medium">CRE Funding</th>
-                <th className="px-3 py-2 text-right font-medium">Allowance</th>
-                <th className="px-3 py-2 text-right font-medium">Contingency</th>
-                <th className="px-3 py-2 font-medium">Reason</th>
+                <Th label="PCO #" sortKey="number" sort={sort} onSort={toggleSort} />
+                <Th label="Scope" sortKey="scope" sort={sort} onSort={toggleSort} />
+                <Th
+                  label="Status"
+                  sortKey="status"
+                  sort={sort}
+                  onSort={toggleSort}
+                  filter={{ options: [...PCO_STATUSES], selected: status, onChange: (v) => setStatus(v ?? [...PCO_STATUSES]) }}
+                />
+                <Th label="Value" align="r" sortKey="value" sort={sort} onSort={toggleSort} />
+                <Th
+                  label="OCO"
+                  align="r"
+                  sortKey="oco"
+                  sort={sort}
+                  onSort={toggleSort}
+                  filter={{ options: ocoOptions, selected: ocoFilter, onChange: setOcoFilter }}
+                />
+                <Th
+                  label="GC Funding"
+                  sortKey="gcFunding"
+                  sort={sort}
+                  onSort={toggleSort}
+                  filter={{ options: gcOptions, selected: gcFilter, onChange: setGcFilter }}
+                />
+                <Th
+                  label="CRE Funding"
+                  sortKey="creFunding"
+                  sort={sort}
+                  onSort={toggleSort}
+                  filter={{ options: [...CRE_FUNDING], selected: funding, onChange: (v) => setFunding(v ?? [...CRE_FUNDING]) }}
+                />
+                <Th label="Allowance" align="r" sortKey="contractorAllowance" sort={sort} onSort={toggleSort} />
+                <Th label="Contingency" align="r" sortKey="contractorContingency" sort={sort} onSort={toggleSort} />
+                <Th
+                  label="Reason"
+                  sortKey="reason"
+                  sort={sort}
+                  onSort={toggleSort}
+                  filter={{ options: [...PCO_REASONS], selected: reason, onChange: (v) => setReason(v ?? [...PCO_REASONS]) }}
+                />
                 <th className="px-3 py-2 font-medium">Notes</th>
                 <th className="px-2 py-2" />
               </tr>
@@ -189,6 +294,24 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
                 </tr>
               )}
             </tbody>
+            {filtered.length > 0 && (
+              <tfoot>
+                <tr className="border-t border-line bg-panel-2/50 text-sm font-semibold">
+                  <td colSpan={3} className="px-3 py-2.5 text-slate-300">
+                    Total <span className="font-normal text-slate-500">· {filtered.length} shown</span>
+                  </td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-white">{money0(sums.value)}</td>
+                  <td colSpan={3} />
+                  <td className={`px-3 py-2.5 text-right tabular-nums ${sums.allow < 0 ? "text-status-blocked" : "text-white"}`}>
+                    {sums.allow === 0 ? "—" : money0(sums.allow)}
+                  </td>
+                  <td className={`px-3 py-2.5 text-right tabular-nums ${sums.cont < 0 ? "text-status-blocked" : "text-white"}`}>
+                    {sums.cont === 0 ? "—" : money0(sums.cont)}
+                  </td>
+                  <td colSpan={3} />
+                </tr>
+              </tfoot>
+            )}
           </table>
         </ScrollX>
       </div>
@@ -355,6 +478,142 @@ function PcoModal({ pco, onClose, onSaved }: { pco: PcoDTO | null; onClose: () =
         </div>
       </div>
     </div>
+  );
+}
+
+// ---------- sortable / filterable header cell ----------
+function Th({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  filter,
+  align,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: { key: SortKey; dir: 1 | -1 } | null;
+  onSort: (k: SortKey) => void;
+  filter?: { options: string[]; selected: string[] | null; onChange: (v: string[] | null) => void };
+  align?: "r";
+}) {
+  const active = sort?.key === sortKey;
+  return (
+    <th className={`whitespace-nowrap px-3 py-2 font-medium ${align === "r" ? "text-right" : "text-left"}`}>
+      <span className={`inline-flex items-center gap-1 ${align === "r" ? "flex-row-reverse" : ""}`}>
+        <button
+          type="button"
+          onClick={() => onSort(sortKey)}
+          className={`inline-flex items-center gap-0.5 uppercase tracking-wide hover:text-slate-200 ${active ? "text-white" : ""}`}
+          title="Sort"
+        >
+          {label}
+          <span className={`text-[9px] ${active ? "text-brand-soft" : "text-slate-700"}`}>
+            {active ? (sort!.dir === 1 ? "▲" : "▼") : "↕"}
+          </span>
+        </button>
+        {filter && <HeaderFilter label={label} {...filter} />}
+      </span>
+    </th>
+  );
+}
+
+// Funnel dropdown attached to a column header. Positioned `fixed` so it isn't
+// clipped by the table's horizontal-scroll pane.
+function HeaderFilter({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  options: string[];
+  selected: string[] | null;
+  onChange: (v: string[] | null) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+
+  const sel = selected ?? options;
+  const filtering = selected != null && selected.length < options.length;
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (
+        popRef.current &&
+        !popRef.current.contains(e.target as Node) &&
+        !btnRef.current?.contains(e.target as Node)
+      )
+        setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  function toggleOpt(opt: string) {
+    const next = sel.includes(opt) ? sel.filter((s) => s !== opt) : [...sel, opt];
+    onChange(next.length === options.length ? null : next);
+  }
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        title={`Filter ${label}`}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setPos({ top: r.bottom + 6, left: Math.max(8, Math.min(r.left - 8, window.innerWidth - 232)) });
+          setOpen((v) => !v);
+        }}
+        className={`rounded p-0.5 ${filtering ? "text-brand-soft" : "text-slate-600 hover:text-slate-300"}`}
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill={filtering ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" />
+        </svg>
+      </button>
+      {open && pos && (
+        <div
+          ref={popRef}
+          className="fixed z-50 w-56 rounded-lg border border-line bg-panel p-1 text-left shadow-card"
+          style={{ top: pos.top, left: pos.left }}
+        >
+          <div className="flex items-center justify-between border-b border-line px-2 py-1.5 text-xs normal-case tracking-normal">
+            <button onClick={() => onChange(null)} className="text-brand-soft hover:underline">
+              Select all
+            </button>
+            <button onClick={() => onChange([])} className="text-slate-400 hover:text-white hover:underline">
+              Clear
+            </button>
+          </div>
+          <ul className="max-h-64 overflow-y-auto py-1">
+            {options.map((opt) => {
+              const on = sel.includes(opt);
+              return (
+                <li key={opt}>
+                  <button
+                    type="button"
+                    onClick={() => toggleOpt(opt)}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm font-normal normal-case tracking-normal text-slate-200 hover:bg-panel-2"
+                  >
+                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${on ? "border-brand bg-brand text-white" : "border-line"}`}>
+                      {on && (
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </span>
+                    <span className="truncate">{opt}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </>
   );
 }
 
