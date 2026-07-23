@@ -11,6 +11,7 @@ import {
   AddMilestoneButton,
   MilestoneActions,
 } from "@/components/HardCostEditors";
+import { ImportButton } from "@/components/ImportDialog";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,12 @@ export default async function HardCostPage() {
         title="Construction Overview"
         subtitle={`${project.name} · #${project.code} · as of ${f?.asOfDate ? shortDate(f.asOfDate) : "—"}`}
         user={session?.user ?? {}}
-        action={<EditFinancialsButton initial={finInitial} asOfDate={iso(f?.asOfDate ?? null)} />}
+        action={
+          <div className="flex items-center gap-2">
+            <ImportButton hint="payapp" label="Import pay app" />
+            <EditFinancialsButton initial={finInitial} asOfDate={iso(f?.asOfDate ?? null)} />
+          </div>
+        }
       />
 
       {/* Budget waterfall */}

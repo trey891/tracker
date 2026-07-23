@@ -70,6 +70,25 @@ model Project {
   lookahead       LookaheadItem[]
   weeklyStatus    WeeklyStatus[]
   attachments     Attachment[]
+  imports         ImportBatch[]
+}
+
+// An uploaded document parsed into proposed field changes. The proposal is
+// stored so the user can review a diff and confirm before anything is applied.
+model ImportBatch {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  docType    String // payapp | pcolog | drawbudget
+  filename   String
+  status     String    @default("pending") // pending | applied | discarded
+  proposal   Json
+  uploadedBy String?
+  appliedBy  String?
+  createdAt  DateTime  @default(now())
+  appliedAt  DateTime?
+
+  @@index([projectId])
 }
 
 // Uploaded documents. Stored in the database (bytea) so the app needs no
@@ -173,6 +192,10 @@ model FinancialSnapshot {
   equityRequested  Float?
   loanBudget       Float?
   loanRequested    Float?
+
+  // From the latest GC pay application (G702)
+  retainage         Float?
+  currentPaymentDue Float?
 
   createdAt DateTime @default(now())
 

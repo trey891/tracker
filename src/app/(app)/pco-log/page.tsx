@@ -6,6 +6,7 @@ import { NoProject } from "@/components/EmptyState";
 import { AddAllowanceButton, AllowanceActions } from "@/components/PcoEditors";
 import { PcoLogTable, type PcoDTO } from "@/components/PcoLogTable";
 import { AttachmentManager, type AttachmentMeta } from "@/components/AttachmentManager";
+import { ImportButton } from "@/components/ImportDialog";
 import { PCO_STATUSES, PCO_STATUS_COLOR, PCO_STATUS_BADGE, REASON_BADGE, FUNDING_BADGE } from "@/lib/constants";
 import { money, pct } from "@/lib/format";
 
@@ -127,9 +128,12 @@ export default async function CostTrackingPage() {
         subtitle={`Potential change orders, contract impact & allowances · Active PCO value ${money(activeValue, { compact: true })}`}
         user={session?.user ?? {}}
         action={
-          <a href="/api/export/pcos" className="btn-ghost">
-            Export CSV
-          </a>
+          <div className="flex items-center gap-2">
+            <ImportButton hint="pcolog" label="Import PCO log" />
+            <a href="/api/export/pcos" className="btn-ghost">
+              Export CSV
+            </a>
+          </div>
         }
       />
 
