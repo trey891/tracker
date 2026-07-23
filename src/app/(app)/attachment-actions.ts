@@ -36,6 +36,22 @@ export async function listAttachments(where: { taskId?: string; allowanceId?: st
   });
 }
 
+// Persist descriptions entered in the PDF photo picker before generating.
+export async function savePhotoDescriptions(updates: { id: string; description: string }[]) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+  const projectId = await getCurrentProjectId();
+  if (!projectId) throw new Error("No project");
+  for (const u of updates) {
+    const desc = u.description.trim();
+    await prisma.attachment.updateMany({
+      where: { id: u.id, projectId, kind: "photo" },
+      data: { description: desc || null },
+    });
+  }
+  revalidatePath("/photos");
+}
+
 // Progress photos for the current project (newest first) — used by the PDF
 // report's photo picker.
 export async function listPhotos() {

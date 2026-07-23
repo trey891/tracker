@@ -11,6 +11,7 @@ import { PCO_STATUS_COLOR } from "@/lib/constants";
 export const dynamic = "force-dynamic";
 
 const PRINT_CSS = `
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 @media print {
   @page { size: letter; margin: 0.5in; }
   html, body { background: #ffffff !important; }
@@ -75,6 +76,7 @@ export default async function ReportPrintPage({ searchParams }: { searchParams: 
   const budget = fin?.currentBudget ?? 0;
   const spent = fin?.costsToDate ?? 0;
   const overBudget = (fin?.overUnderBeforeContingency ?? 0) > 0;
+  const publishedOn = new Date();
 
   const photoDate = (p: { takenDate: Date | null; createdAt: Date }) =>
     p.takenDate ? fullDate(p.takenDate) : fullDate(p.createdAt);
@@ -84,10 +86,10 @@ export default async function ReportPrintPage({ searchParams }: { searchParams: 
       <style dangerouslySetInnerHTML={{ __html: PRINT_CSS }} />
       <PrintTrigger />
 
-      <div className="mx-auto max-w-[8in] px-6 py-6 print:px-0 print:py-0">
+      <div className="mx-auto max-w-[7.5in] px-6 py-6 print:px-0 print:py-0">
         {/* ================= PAGE 1 — PROJECT DASHBOARD ================= */}
         <section>
-          <ReportHeader project={project} fin={fin} title="Project Dashboard" />
+          <ReportHeader project={project} publishedOn={publishedOn} title="Project Dashboard" />
 
           {/* KPI row */}
           <div className="mt-4 grid grid-cols-5 gap-2 avoid-break">
@@ -109,22 +111,24 @@ export default async function ReportPrintPage({ searchParams }: { searchParams: 
           </div>
 
           {/* Gantt */}
-          <div className="mt-5 avoid-break">
+          <div className="mt-4 avoid-break">
             <SectionLabel>Milestone Schedule</SectionLabel>
-            <GanttSchedule milestones={gantt} light />
+            <div className="mt-1">
+              <GanttSchedule milestones={gantt} light markerDate={publishedOn.toISOString()} markerLabel="Published" />
+            </div>
           </div>
 
           {/* Top issues */}
-          <div className="mt-5 avoid-break">
+          <div className="mt-4 avoid-break">
             <SectionLabel>Top Issues</SectionLabel>
-            <ul className="mt-1 space-y-1">
-              {tasks.filter((t) => t.status === "Blocked" || t.status === "Needs Attention").slice(0, 6).map((t) => (
-                <li key={t.id} className="flex justify-between border-b border-gray-100 py-1 text-sm">
-                  <span>
-                    <span className="font-medium">{t.title}</span>
+            <ul className="mt-1">
+              {tasks.filter((t) => t.status === "Blocked" || t.status === "Needs Attention").slice(0, 5).map((t) => (
+                <li key={t.id} className="flex justify-between border-b border-gray-100 py-0.5 text-xs">
+                  <span className="truncate pr-2">
+                    <span className="font-semibold text-gray-900">{t.title}</span>
                     <span className="text-gray-500"> — {t.workstream} · {t.lead ?? "Unassigned"}</span>
                   </span>
-                  <span className="text-gray-600">{t.status}</span>
+                  <span className="shrink-0 text-gray-600">{t.status}</span>
                 </li>
               ))}
             </ul>
@@ -132,16 +136,14 @@ export default async function ReportPrintPage({ searchParams }: { searchParams: 
 
           {/* Cover photos */}
           {cover.length > 0 && (
-            <div className="mt-5 avoid-break">
+            <div className="mt-4 avoid-break">
               <SectionLabel>Progress Photos</SectionLabel>
               <div className="mt-1 grid grid-cols-3 gap-3">
                 {cover.map((p) => (
                   <figure key={p.id} className="avoid-break">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={`/api/attachments/${p.id}`} alt={p.description ?? ""} className="h-[1.7in] w-full rounded border border-gray-200 object-cover" />
-                    <figcaption className="mt-1 text-[10px] text-gray-600">
-                      {photoDate(p)}{p.description ? ` — ${p.description}` : ""}
-                    </figcaption>
+                    <img src={`/api/attachments/${p.id}`} alt={p.description ?? ""} className="h-[1.5in] w-full rounded border border-gray-200 object-cover" />
+                    <PhotoCaption date={photoDate(p)} description={p.description} />
                   </figure>
                 ))}
               </div>
@@ -277,9 +279,7 @@ export default async function ReportPrintPage({ searchParams }: { searchParams: 
                 <figure key={p.id} className="avoid-break">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={`/api/attachments/${p.id}`} alt={p.description ?? ""} className="h-[2.1in] w-full rounded border border-gray-200 object-cover" />
-                  <figcaption className="mt-1 text-[10px] text-gray-600">
-                    {photoDate(p)}{p.description ? ` — ${p.description}` : ""}
-                  </figcaption>
+                  <PhotoCaption date={photoDate(p)} description={p.description} />
                 </figure>
               ))}
             </div>
@@ -295,25 +295,38 @@ export default async function ReportPrintPage({ searchParams }: { searchParams: 
 }
 
 /* ---------- print helpers ---------- */
-function ReportHeader({ project, fin, title }: { project: { name: string; code: string | null }; fin: { asOfDate: Date | null } | null; title: string }) {
+function ReportHeader({ project, publishedOn, title }: { project: { name: string }; publishedOn: Date; title: string }) {
   return (
-    <div className="flex items-end justify-between border-b-2 border-gray-900 pb-2">
-      <div>
-        <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-500">{title}</div>
-        <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
-        <div className="text-xs text-gray-500">Project #{project.code ?? "—"}{fin?.asOfDate ? ` · As of ${fullDate(fin.asOfDate)}` : ""}</div>
-      </div>
-      <div className="text-right text-[11px] text-gray-500">Pulse · Status Hub</div>
+    <div className="border-b-2 border-gray-900 pb-2">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-500">{title}</div>
+      <h1 className="text-xl font-bold text-gray-900">{project.name}</h1>
+      <div className="text-xs text-gray-500">Published {fullDate(publishedOn)}</div>
     </div>
   );
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="mb-3 border-b-2 border-gray-900 pb-1 text-lg font-bold text-gray-900">{children}</h2>;
+  return <h2 className="mb-3 border-b-2 border-gray-900 pb-1 text-base font-bold uppercase tracking-wide text-gray-900">{children}</h2>;
 }
 
+// Distinct in-section heading: dark, bold, with a small accent bar so it reads
+// clearly apart from the body content.
 function SectionLabel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={`text-[11px] font-semibold uppercase tracking-wider text-gray-500 ${className ?? ""}`}>{children}</div>;
+  return (
+    <div className={`flex items-center gap-1.5 border-b border-gray-300 pb-0.5 text-[11px] font-bold uppercase tracking-wide text-gray-900 ${className ?? ""}`}>
+      <span className="inline-block h-3 w-1 rounded-sm bg-gray-900" />
+      {children}
+    </div>
+  );
+}
+
+function PhotoCaption({ date, description }: { date: string; description: string | null }) {
+  return (
+    <figcaption className="mt-1 flex items-baseline gap-1 text-[10px] text-gray-600">
+      <span className="shrink-0 font-medium text-gray-800">{date}</span>
+      {description && <span className="truncate text-gray-500">— {description}</span>}
+    </figcaption>
+  );
 }
 
 function Kpi({ label, value, sub, dot }: { label: string; value: string; sub?: string; dot?: string }) {

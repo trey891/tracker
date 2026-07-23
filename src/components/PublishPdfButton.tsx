@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { listPhotos } from "@/app/(app)/attachment-actions";
+import { listPhotos, savePhotoDescriptions } from "@/app/(app)/attachment-actions";
 
 type Photo = { id: string; filename: string; description: string | null; takenDate: string | null; createdAt: string };
 
@@ -11,22 +11,37 @@ export function PublishPdfButton() {
   const [open, setOpen] = useState(false);
   const [photos, setPhotos] = useState<Photo[] | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
+  const [descs, setDescs] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   async function openPicker() {
     setOpen(true);
     setPhotos(null);
     const p = (await listPhotos()) as Photo[];
     setPhotos(p);
+    setDescs(Object.fromEntries(p.map((x) => [x.id, x.description ?? ""])));
   }
 
   function toggle(id: string) {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length >= 3 ? s : [...s, id]));
   }
 
-  function generate() {
-    const qs = selected.length ? `?photos=${selected.join(",")}` : "";
-    setOpen(false);
-    router.push(`/report/print${qs}`);
+  const selectedPhotos = (photos ?? []).filter((p) => selected.includes(p.id));
+
+  async function generate() {
+    setSaving(true);
+    try {
+      // Save any descriptions entered/edited for the selected photos.
+      const updates = selectedPhotos
+        .filter((p) => (descs[p.id] ?? "") !== (p.description ?? ""))
+        .map((p) => ({ id: p.id, description: descs[p.id] ?? "" }));
+      if (updates.length) await savePhotoDescriptions(updates);
+      const qs = selected.length ? `?photos=${selected.join(",")}` : "";
+      setOpen(false);
+      router.push(`/report/print${qs}`);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -57,26 +72,49 @@ export function PublishPdfButton() {
                   No progress photos uploaded yet. You can still generate the report — it just won&rsquo;t include cover photos.
                 </p>
               ) : (
-                <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-                  {photos.map((p) => {
-                    const idx = selected.indexOf(p.id);
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => toggle(p.id)}
-                        className={`relative overflow-hidden rounded-lg border-2 ${idx >= 0 ? "border-brand" : "border-line"}`}
-                      >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={`/api/attachments/${p.id}`} alt={p.description ?? p.filename} className="h-24 w-full object-cover" loading="lazy" />
-                        {idx >= 0 && (
-                          <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-semibold text-white">
-                            {idx + 1}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
+                <>
+                  <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                    {photos.map((p) => {
+                      const idx = selected.indexOf(p.id);
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => toggle(p.id)}
+                          className={`relative overflow-hidden rounded-lg border-2 ${idx >= 0 ? "border-brand" : "border-line"}`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={`/api/attachments/${p.id}`} alt={p.description ?? p.filename} className="h-24 w-full object-cover" loading="lazy" />
+                          {idx >= 0 && (
+                            <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] font-semibold text-white">
+                              {idx + 1}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Descriptions for the selected photos */}
+                  {selectedPhotos.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="text-xs font-medium text-slate-400">Photo descriptions (shown next to the date)</div>
+                      {selectedPhotos.map((p, i) => (
+                        <div key={p.id} className="flex items-center gap-2">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand/20 text-[11px] font-semibold text-brand-soft">{i + 1}</span>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={`/api/attachments/${p.id}`} alt="" className="h-8 w-10 shrink-0 rounded object-cover" />
+                          <input
+                            value={descs[p.id] ?? ""}
+                            onChange={(e) => setDescs((d) => ({ ...d, [p.id]: e.target.value }))}
+                            placeholder={p.description ? "" : "Add a short description…"}
+                            className="input py-1 text-sm"
+                            maxLength={80}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -84,7 +122,7 @@ export function PublishPdfButton() {
               <p className="text-xs text-slate-500">Opens a print view — use your browser&rsquo;s “Save as PDF”.</p>
               <div className="flex gap-2">
                 <button onClick={() => setOpen(false)} className="btn-ghost">Cancel</button>
-                <button onClick={generate} className="btn-primary">Generate report</button>
+                <button onClick={generate} disabled={saving} className="btn-primary">{saving ? "Preparing…" : "Generate report"}</button>
               </div>
             </div>
           </div>

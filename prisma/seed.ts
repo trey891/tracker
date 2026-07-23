@@ -20,20 +20,55 @@ function d(v: string | null | undefined): Date | null {
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
-async function main() {
-  // Safe to run on every deploy: if the database already has a project we skip,
-  // so in-app edits are never wiped. Set SEED_FORCE=1 to reseed regardless.
-  if (!process.env.SEED_FORCE) {
-    const existing = await prisma.project.count();
-    if (existing > 0) {
-      console.log(`Database already has ${existing} project(s); skipping seed (set SEED_FORCE=1 to override).`);
-      return;
-    }
-  }
+// Idempotently add data introduced after the initial deploy to an existing DB
+// without disturbing anything the team has already entered.
+async function backfill(data: Json) {
+  const project = await prisma.project.findFirst({ where: { name: data.project.name } });
+  if (!project) return;
 
+  // PCO line items (added after first release) — only if none exist yet.
+  const pcoCount = await prisma.pco.count({ where: { projectId: project.id } });
+  if (pcoCount === 0 && Array.isArray(data.pcos) && data.pcos.length) {
+    await prisma.pco.createMany({
+      data: (data.pcos as Json[]).map((p, i) => ({
+        projectId: project.id,
+        orderIndex: i,
+        number: p.number ?? null,
+        scope: p.scope,
+        status: p.status ?? "Pending",
+        value: p.value ?? null,
+        oco: p.oco != null ? String(p.oco) : null,
+        gcFunding: p.gcFunding ?? null,
+        creFunding: p.creFunding ?? "None/Other",
+        contractorAllowance: p.contractorAllowance ?? null,
+        buyout: p.buyout ?? null,
+        contractorContingency: p.contractorContingency ?? null,
+        recoupableCosts: p.recoupableCosts ?? null,
+        reason: p.reason ?? "Other",
+        notes: p.notes ?? null,
+      })),
+    });
+    console.log(`  backfilled ${(data.pcos as Json[]).length} PCO line items`);
+  }
+}
+
+async function main() {
   const data: Json = JSON.parse(
     readFileSync(join(process.cwd(), "prisma", "seed-data.json"), "utf8"),
   );
+
+  // Safe to run on every deploy: if the database already has a project we skip
+  // the full seed (so in-app edits are never wiped), but still backfill any
+  // brand-new data added in later releases (e.g. the PCO line-item log).
+  // Set SEED_FORCE=1 to reseed everything regardless.
+  if (!process.env.SEED_FORCE) {
+    const existing = await prisma.project.count();
+    if (existing > 0) {
+      await backfill(data);
+      console.log(`Database already has ${existing} project(s); ran backfills, skipped full seed (set SEED_FORCE=1 to override).`);
+      return;
+    }
+  }
 
   const seedPassword = process.env.SEED_PASSWORD || "pulse-changeme-2026";
   const passwordHash = await bcrypt.hash(seedPassword, 10);

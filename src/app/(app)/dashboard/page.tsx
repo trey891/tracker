@@ -87,7 +87,7 @@ export default async function DashboardPage() {
             Full schedule →
           </Link>
         </div>
-        <GanttSchedule milestones={ganttMilestones} />
+        <GanttSchedule milestones={ganttMilestones} markerDate={new Date().toISOString()} markerLabel="Today" />
       </section>
 
       {/* KPI cards */}
