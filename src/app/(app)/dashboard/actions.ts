@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProjectId } from "@/lib/project";
 import { getTasks, statusCounts } from "@/lib/data";
+import { requireAccess } from "@/lib/authz";
 
 /**
  * Freeze the current task-status distribution into the weekly trend. Publishing
@@ -12,8 +12,7 @@ import { getTasks, statusCounts } from "@/lib/data";
  * a duplicate — mirroring the "publish Friday prior to the weekly meeting" flow.
  */
 export async function publishWeeklySnapshot() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireAccess("contributor");
   const projectId = await getCurrentProjectId();
   if (!projectId) throw new Error("No project");
 

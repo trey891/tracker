@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProjectId } from "@/lib/project";
 
@@ -8,8 +9,9 @@ const MAX_DOC = 4 * 1024 * 1024; // 4 MB for documents
 const MAX_PHOTO = 5 * 1024 * 1024; // 5 MB for progress photos
 
 export async function POST(request: Request) {
-  const session = await auth();
+  const { session, access } = await getAccess();
   if (!session?.user) return new Response("Unauthorized", { status: 401 });
+  if (access === "viewer") return new Response("Your account is view-only.", { status: 403 });
 
   const projectId = await getCurrentProjectId();
   if (!projectId) return new Response("No project", { status: 404 });

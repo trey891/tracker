@@ -32,17 +32,25 @@ export function TaskManager({
   initialStatus,
   initialWorkstream,
   initialQuery,
+  initialLead,
   openNew,
+  readOnly,
 }: {
   tasks: TaskDTO[];
   team: TeamMember[];
   initialStatus?: string;
   initialWorkstream?: string;
   initialQuery?: string;
+  initialLead?: string;
   openNew?: boolean;
+  readOnly?: boolean;
 }) {
   const router = useRouter();
+  const leadOptions = useMemo(() => [...team.map((m) => m.initials), "Unassigned"], [team]);
   const [q, setQ] = useState(initialQuery ?? "");
+  const [lead, setLead] = useState<string[]>(
+    initialLead && leadOptions.includes(initialLead) ? [initialLead] : leadOptions,
+  );
   // Default view hides Done tasks; a deep link to a specific status overrides.
   const [status, setStatus] = useState<string[]>(
     initialStatus && (STATUSES as readonly string[]).includes(initialStatus)
@@ -54,7 +62,7 @@ export function TaskManager({
   );
   const [priority, setPriority] = useState<string[]>([...PRIORITIES]);
   const [editing, setEditing] = useState<TaskDTO | null>(null);
-  const [creating, setCreating] = useState<boolean>(!!openNew);
+  const [creating, setCreating] = useState<boolean>(!!openNew && !readOnly);
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
@@ -63,6 +71,7 @@ export function TaskManager({
         if (!status.includes(t.status)) return false;
         if (!workstream.includes(t.workstream)) return false;
         if (!priority.includes(t.priority)) return false;
+        if (!lead.includes(t.lead ?? "Unassigned")) return false;
         if (q && !`${t.title} ${t.note ?? ""} ${t.lead ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
         return true;
       })
@@ -73,7 +82,7 @@ export function TaskManager({
         if (!b.deadline) return -1;
         return a.deadline.localeCompare(b.deadline);
       });
-  }, [tasks, q, status, workstream, priority]);
+  }, [tasks, q, status, workstream, priority, lead]);
 
   async function onDelete(id: string) {
     if (!confirm("Delete this task? This cannot be undone.")) return;
@@ -98,11 +107,14 @@ export function TaskManager({
         <MultiSelectFilter label="Status" options={STATUSES} selected={status} onChange={setStatus} />
         <MultiSelectFilter label="Workstream" options={WORKSTREAMS} selected={workstream} onChange={setWorkstream} />
         <MultiSelectFilter label="Priority" options={PRIORITIES} selected={priority} onChange={setPriority} />
+        <MultiSelectFilter label="Lead" options={leadOptions} selected={lead} onChange={setLead} />
         <div className="ml-auto flex items-center gap-2">
           <span className="text-sm text-slate-500">{filtered.length} of {tasks.length}</span>
-          <button className="btn-primary" onClick={() => setCreating(true)}>
-            + New Task
-          </button>
+          {!readOnly && (
+            <button className="btn-primary" onClick={() => setCreating(true)}>
+              + New Task
+            </button>
+          )}
         </div>
       </div>
 
@@ -129,14 +141,16 @@ export function TaskManager({
               {isPastDue(t.deadline, t.status) && <span className="pill text-status-blocked bg-status-blocked/10 ring-status-blocked/30">Past due</span>}
               {t.blocker && <span className="truncate text-xs text-status-blocked">⚠ {t.blocker}</span>}
             </div>
-            <div className="mt-3 flex gap-1 border-t border-line pt-2">
-              <button onClick={() => setEditing(t)} className="rounded-md px-2 py-1 text-xs text-slate-300 hover:bg-panel-2">
-                Edit
-              </button>
-              <button onClick={() => onDelete(t.id)} disabled={busy} className="ml-auto rounded-md px-2 py-1 text-xs text-slate-400 hover:text-status-blocked">
-                Delete
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="mt-3 flex gap-1 border-t border-line pt-2">
+                <button onClick={() => setEditing(t)} className="rounded-md px-2 py-1 text-xs text-slate-300 hover:bg-panel-2">
+                  Edit
+                </button>
+                <button onClick={() => onDelete(t.id)} disabled={busy} className="ml-auto rounded-md px-2 py-1 text-xs text-slate-400 hover:text-status-blocked">
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
         ))}
         {filtered.length === 0 && <p className="card p-6 text-center text-sm text-slate-500">No tasks match your filters.</p>}
@@ -187,12 +201,16 @@ export function TaskManager({
                   <td className="px-4 py-3"><PriorityBadge priority={t.priority} /></td>
                   <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
                   <td className="px-4 py-3 text-right">
-                    <button onClick={() => setEditing(t)} className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-panel-2 hover:text-white">
-                      Edit
-                    </button>
-                    <button onClick={() => onDelete(t.id)} disabled={busy} className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-status-blocked/10 hover:text-status-blocked">
-                      Delete
-                    </button>
+                    {!readOnly && (
+                      <>
+                        <button onClick={() => setEditing(t)} className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-panel-2 hover:text-white">
+                          Edit
+                        </button>
+                        <button onClick={() => onDelete(t.id)} disabled={busy} className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-status-blocked/10 hover:text-status-blocked">
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

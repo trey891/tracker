@@ -1,14 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProjectId } from "@/lib/project";
+import { requireAccess } from "@/lib/authz";
 
-async function requireSession() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
-}
+const requireSession = () => requireAccess("contributor");
 
 function num(fd: FormData, key: string): number | null {
   const raw = String(fd.get(key) ?? "").trim().replace(/[$,]/g, "");

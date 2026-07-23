@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTeamMember, updateTeamMember, setMemberPassword, deleteTeamMember } from "@/app/(app)/team/actions";
 
-export type Member = { id: string; name: string; email: string; initials: string; role: string };
+export type Member = { id: string; name: string; email: string; initials: string; role: string; access: string };
+
+// What the signed-in user may do to a given member card.
+export type MemberMode = "admin" | "self" | "none";
 
 export function AddMemberButton() {
   const [open, setOpen] = useState(false);
@@ -13,51 +16,60 @@ export function AddMemberButton() {
       <button onClick={() => setOpen(true)} className="btn-primary">
         + Add member
       </button>
-      {open && <MemberModal onClose={() => setOpen(false)} />}
+      {open && <MemberModal admin onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-export function MemberActions({ member }: { member: Member }) {
+export function MemberActions({ member, mode }: { member: Member; mode: MemberMode }) {
   const router = useRouter();
   const [edit, setEdit] = useState(false);
   const [pw, setPw] = useState(false);
+  if (mode === "none") return null;
+
   return (
     <div className="mt-3 flex gap-1 border-t border-line pt-3">
       <button onClick={() => setEdit(true)} className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-panel-2 hover:text-white">
-        Edit
+        {mode === "self" ? "Edit my info" : "Edit"}
       </button>
-      <button onClick={() => setPw(true)} className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-panel-2 hover:text-white">
-        Set password
-      </button>
-      <button
-        onClick={async () => {
-          if (!confirm(`Remove ${member.name}?`)) return;
-          try {
-            await deleteTeamMember(member.id);
-            router.refresh();
-          } catch (e) {
-            alert((e as Error).message);
-          }
-        }}
-        className="ml-auto rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-status-blocked/10 hover:text-status-blocked"
-      >
-        Remove
-      </button>
-      {edit && <MemberModal member={member} onClose={() => setEdit(false)} />}
+      {mode === "admin" && (
+        <>
+          <button onClick={() => setPw(true)} className="rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-panel-2 hover:text-white">
+            Set password
+          </button>
+          {member.access !== "admin" && (
+            <button
+              onClick={async () => {
+                if (!confirm(`Remove ${member.name}?`)) return;
+                try {
+                  await deleteTeamMember(member.id);
+                  router.refresh();
+                } catch (e) {
+                  alert((e as Error).message);
+                }
+              }}
+              className="ml-auto rounded-md px-2 py-1 text-xs text-slate-400 hover:bg-status-blocked/10 hover:text-status-blocked"
+            >
+              Remove
+            </button>
+          )}
+        </>
+      )}
+      {edit && <MemberModal member={member} admin={mode === "admin"} onClose={() => setEdit(false)} />}
       {pw && <PasswordModal member={member} onClose={() => setPw(false)} />}
     </div>
   );
 }
 
-function MemberModal({ member, onClose }: { member?: Member; onClose: () => void }) {
+function MemberModal({ member, admin, onClose }: { member?: Member; admin: boolean; onClose: () => void }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isEdit = !!member;
+  const lockedAdmin = member?.access === "admin";
 
   return (
-    <Modal title={isEdit ? "Edit member" : "Add member"} onClose={onClose}>
+    <Modal title={isEdit ? (admin ? "Edit member" : "Edit my info") : "Add member"} onClose={onClose}>
       <form
         action={async (fd) => {
           setSaving(true);
@@ -90,10 +102,27 @@ function MemberModal({ member, onClose }: { member?: Member; onClose: () => void
             <input name="initials" defaultValue={member?.initials ?? ""} className="input" placeholder="JD" maxLength={4} />
           </div>
           <div>
-            <label className="label">Role</label>
+            <label className="label">Role / title</label>
             <input name="role" defaultValue={member?.role ?? ""} className="input" placeholder="Project Coordinator" />
           </div>
         </div>
+
+        {admin && (
+          <div>
+            <label className="label">Access</label>
+            {lockedAdmin ? (
+              <p className="rounded-lg border border-line bg-panel-2/40 px-3 py-2 text-sm text-slate-300">
+                Admin <span className="text-xs text-slate-500">— the designated admin account can't be changed.</span>
+              </p>
+            ) : (
+              <select name="access" defaultValue={member?.access === "viewer" ? "viewer" : "contributor"} className="input">
+                <option value="contributor">Contributor — can edit everything except members &amp; passwords</option>
+                <option value="viewer">Viewer — can browse everything, change nothing</option>
+              </select>
+            )}
+          </div>
+        )}
+
         {!isEdit && (
           <div>
             <label className="label">Temporary password</label>
@@ -165,7 +194,7 @@ function SaveBar({ saving, onCancel, label, onSubmit }: { saving: boolean; onCan
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="card w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+      <div className="card max-h-[85vh] w-full max-w-md overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <h3 className="text-base font-semibold text-white">{title}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>

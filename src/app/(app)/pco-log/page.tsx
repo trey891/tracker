@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getPrimaryProject, getLatestFinancials } from "@/lib/data";
 import { Topbar } from "@/components/Topbar";
@@ -16,7 +16,8 @@ export const dynamic = "force-dynamic";
 const sumVal = (list: { value: number | null }[]) => list.reduce((a, p) => a + (p.value ?? 0), 0);
 
 export default async function CostTrackingPage() {
-  const session = await auth();
+  const { session, access } = await getAccess();
+  const canEdit = access !== "viewer";
   const project = await getPrimaryProject();
   if (!project) {
     return (
@@ -130,7 +131,7 @@ export default async function CostTrackingPage() {
         user={session?.user ?? {}}
         action={
           <div className="flex items-center gap-2">
-            <ImportButton label="Import" />
+            {canEdit && <ImportButton label="Import" />}
             <a href="/api/export/pcos" className="btn-ghost">
               Export CSV
             </a>
@@ -208,7 +209,7 @@ export default async function CostTrackingPage() {
             <span className="eyebrow">Use of allowances (Exhibit F)</span>
             <h2 className="mt-1 text-lg font-semibold text-white">Per the GMP — administered by Beck</h2>
           </div>
-          <AddAllowanceButton />
+          {canEdit && <AddAllowanceButton />}
         </div>
         <ScrollX>
           <table className="w-full min-w-[760px] text-left text-sm">
@@ -242,7 +243,7 @@ export default async function CostTrackingPage() {
                     <td className="px-4 py-3 text-right text-slate-400">{money(-r.used)}</td>
                     <td className={`px-4 py-3 text-right font-medium ${r.balance > 0 ? "text-status-ontrack" : "text-slate-500"}`}>{money(r.balance)}</td>
                     <td className="max-w-[180px] truncate px-4 py-3 text-slate-500" title={r.pcReference ?? ""}>{r.pcReference ?? "—"}</td>
-                    <td className="px-3 py-3"><AllowanceActions allowance={r.dto} /></td>
+                    <td className="px-3 py-3">{canEdit && <AllowanceActions allowance={r.dto} />}</td>
                   </tr>
                 );
               })}
@@ -264,7 +265,7 @@ export default async function CostTrackingPage() {
           <span className="eyebrow">Potential change order log</span>
           <h2 className="mt-1 text-lg font-semibold text-white">Every PCO on the project</h2>
         </div>
-        <PcoLogTable pcos={pcoDto} />
+        <PcoLogTable pcos={pcoDto} readOnly={!canEdit} />
       </section>
 
       {/* PCO documents */}
@@ -272,7 +273,7 @@ export default async function CostTrackingPage() {
         <span className="eyebrow">Documents</span>
         <h2 className="mb-4 mt-1 text-lg font-semibold text-white">PCO documents</h2>
         <p className="mb-3 text-xs text-slate-500">Attach PCO logs, change-order backup, quotes, or approvals. For a specific allowance line, use its Edit button above.</p>
-        <AttachmentManager projectLevel initial={pcoDocsInitial} />
+        <AttachmentManager projectLevel initial={pcoDocsInitial} readOnly={!canEdit} />
       </section>
     </>
   );

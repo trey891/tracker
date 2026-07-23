@@ -20,9 +20,14 @@ function d(v: string | null | undefined): Date | null {
   return Number.isNaN(dt.getTime()) ? null : dt;
 }
 
+const ADMIN_EMAIL = "dewallette@gmail.com";
+
 // Idempotently add data introduced after the initial deploy to an existing DB
 // without disturbing anything the team has already entered.
 async function backfill(data: Json) {
+  // Access roles (added after first release): the designated admin.
+  await prisma.user.updateMany({ where: { email: ADMIN_EMAIL }, data: { access: "admin" } });
+
   const project = await prisma.project.findFirst({ where: { name: data.project.name } });
   if (!project) return;
 
@@ -75,14 +80,16 @@ async function main() {
 
   // --- Team users (upsert by email) ---
   for (const m of data.team as Json[]) {
+    const access = m.email.toLowerCase() === ADMIN_EMAIL ? "admin" : "contributor";
     await prisma.user.upsert({
       where: { email: m.email.toLowerCase() },
-      update: { name: m.name, initials: m.initials, role: m.role },
+      update: { name: m.name, initials: m.initials, role: m.role, access },
       create: {
         email: m.email.toLowerCase(),
         name: m.name,
         initials: m.initials,
         role: m.role,
+        access,
         passwordHash,
       },
     });

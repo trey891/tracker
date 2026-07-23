@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getPrimaryProject, getLatestFinancials } from "@/lib/data";
 import { Topbar } from "@/components/Topbar";
@@ -29,7 +29,8 @@ const FIN_KEYS = [
 ] as const;
 
 export default async function HardCostPage() {
-  const session = await auth();
+  const { session, access } = await getAccess();
+  const canEdit = access !== "viewer";
   const project = await getPrimaryProject();
   if (!project) {
     return (
@@ -66,10 +67,12 @@ export default async function HardCostPage() {
         subtitle={`${project.name} · #${project.code} · as of ${f?.asOfDate ? shortDate(f.asOfDate) : "—"}`}
         user={session?.user ?? {}}
         action={
-          <div className="flex items-center gap-2">
-            <ImportButton hint="payapp" label="Import" />
-            <EditFinancialsButton initial={finInitial} asOfDate={iso(f?.asOfDate ?? null)} />
-          </div>
+          canEdit ? (
+            <div className="flex items-center gap-2">
+              <ImportButton hint="payapp" label="Import" />
+              <EditFinancialsButton initial={finInitial} asOfDate={iso(f?.asOfDate ?? null)} />
+            </div>
+          ) : undefined
         }
       />
 
@@ -140,7 +143,7 @@ export default async function HardCostPage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-sm text-slate-500">{commitments.length} vendors</span>
-            <AddCommitmentButton />
+            {canEdit && <AddCommitmentButton />}
           </div>
         </div>
         <ScrollX>
@@ -167,7 +170,7 @@ export default async function HardCostPage() {
                   <td className="px-4 py-3 text-right font-medium text-white">{money(c.totalContract, { compact: true })}</td>
                   <td className="px-4 py-3 text-right text-slate-300">{money(c.invoiced, { compact: true })}</td>
                   <td className="px-4 py-3 text-right text-status-ontrack">{money(c.remaining, { compact: true })}</td>
-                  <td className="px-3 py-3"><CommitmentActions commitment={c} /></td>
+                  <td className="px-3 py-3">{canEdit && <CommitmentActions commitment={c} />}</td>
                 </tr>
               ))}
             </tbody>
@@ -182,7 +185,7 @@ export default async function HardCostPage() {
             <span className="eyebrow">Schedule</span>
             <h2 className="mt-1 text-lg font-semibold text-white">Milestones &amp; major activities</h2>
           </div>
-          <AddMilestoneButton />
+          {canEdit && <AddMilestoneButton />}
         </div>
         <ScrollX>
           <table className="w-full min-w-[640px] text-left text-sm">
@@ -206,7 +209,7 @@ export default async function HardCostPage() {
                   <td className={`px-4 py-3 text-right font-medium ${(m.varianceDays ?? 0) > 0 ? "text-status-blocked" : (m.varianceDays ?? 0) < 0 ? "text-status-ontrack" : "text-slate-400"}`}>
                     {m.varianceDays == null ? "—" : m.varianceDays > 0 ? `+${m.varianceDays}d` : m.varianceDays < 0 ? `${m.varianceDays}d` : "on time"}
                   </td>
-                  <td className="px-3 py-3"><MilestoneActions milestone={m} /></td>
+                  <td className="px-3 py-3">{canEdit && <MilestoneActions milestone={m} />}</td>
                 </tr>
               ))}
             </tbody>

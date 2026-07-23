@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getPrimaryProject } from "@/lib/data";
 import { Topbar } from "@/components/Topbar";
@@ -8,7 +8,7 @@ import { PhotoGallery, type PhotoMeta } from "@/components/PhotoGallery";
 export const dynamic = "force-dynamic";
 
 export default async function ProgressPhotosPage() {
-  const session = await auth();
+  const { session, access } = await getAccess();
   const project = await getPrimaryProject();
   if (!project) {
     return (
@@ -42,7 +42,7 @@ export default async function ProgressPhotosPage() {
         subtitle={`${project.name} — site documentation, newest first`}
         user={session?.user ?? {}}
       />
-      <PhotoGallery photos={dtos} />
+      <PhotoGallery photos={dtos} readOnly={access === "viewer"} />
     </>
   );
 }

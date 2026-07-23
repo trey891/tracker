@@ -21,7 +21,7 @@ function prettyDate(iso: string | null) {
 }
 const dayKey = (p: PhotoMeta) => p.takenDate ?? p.createdAt.slice(0, 10);
 
-export function PhotoGallery({ photos }: { photos: PhotoMeta[] }) {
+export function PhotoGallery({ photos, readOnly }: { photos: PhotoMeta[]; readOnly?: boolean }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -92,6 +92,7 @@ export function PhotoGallery({ photos }: { photos: PhotoMeta[] }) {
   return (
     <div>
       {/* Uploader */}
+      {!readOnly && (
       <div className="card card-pad mb-5">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto] sm:items-end">
           <div>
@@ -136,6 +137,7 @@ export function PhotoGallery({ photos }: { photos: PhotoMeta[] }) {
         )}
         {error && <p className="mt-2 rounded-md bg-status-blocked/10 px-3 py-1.5 text-xs text-status-blocked ring-1 ring-status-blocked/30">{error}</p>}
       </div>
+      )}
 
       {/* View toggle */}
       {photos.length > 0 && (
@@ -219,22 +221,26 @@ export function PhotoGallery({ photos }: { photos: PhotoMeta[] }) {
               {lightbox.description && <div className="text-sm text-slate-400">{lightbox.description}</div>}
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditing(lightbox);
-                  setLightbox(null);
-                }}
-                className="btn-ghost"
-              >
-                Edit
-              </button>
+              {!readOnly && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditing(lightbox);
+                    setLightbox(null);
+                  }}
+                  className="btn-ghost"
+                >
+                  Edit
+                </button>
+              )}
               <a href={`/api/attachments/${lightbox.id}?download=1`} className="btn-ghost" onClick={(e) => e.stopPropagation()}>
                 Download
               </a>
-              <button onClick={() => remove(lightbox.id)} className="btn-ghost text-status-blocked" onMouseDown={(e) => e.stopPropagation()}>
-                Delete
-              </button>
+              {!readOnly && (
+                <button onClick={() => remove(lightbox.id)} className="btn-ghost text-status-blocked" onMouseDown={(e) => e.stopPropagation()}>
+                  Delete
+                </button>
+              )}
               <button onClick={() => setLightbox(null)} className="btn-ghost">
                 Close ✕
               </button>

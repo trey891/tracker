@@ -22,7 +22,8 @@ model User {
   email        String   @unique
   name         String
   initials     String
-  role         String
+  role         String // job title, display only
+  access       String   @default("contributor") // admin | contributor | viewer
   passwordHash String
   createdAt    DateTime @default(now())
 }

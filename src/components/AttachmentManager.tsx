@@ -32,12 +32,14 @@ export function AttachmentManager({
   projectLevel,
   initial,
   compact,
+  readOnly,
 }: {
   taskId?: string;
   allowanceId?: string;
   projectLevel?: boolean;
   initial?: AttachmentMeta[];
   compact?: boolean;
+  readOnly?: boolean;
 }) {
   const [items, setItems] = useState<AttachmentMeta[]>(initial ?? []);
   const [loading, setLoading] = useState(!initial);
@@ -91,14 +93,16 @@ export function AttachmentManager({
         <span className={compact ? "text-xs font-medium text-slate-400" : "label mb-0"}>
           Documents {items.length > 0 && <span className="text-slate-500">({items.length})</span>}
         </span>
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="rounded-md border border-line bg-panel-2 px-2.5 py-1 text-xs text-slate-200 hover:border-slate-500 disabled:opacity-60"
-        >
-          {uploading ? "Uploading…" : "＋ Attach file"}
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="rounded-md border border-line bg-panel-2 px-2.5 py-1 text-xs text-slate-200 hover:border-slate-500 disabled:opacity-60"
+          >
+            {uploading ? "Uploading…" : "＋ Attach file"}
+          </button>
+        )}
         <input ref={inputRef} type="file" multiple className="hidden" onChange={(e) => onFiles(e.target.files)} />
       </div>
 
@@ -131,14 +135,16 @@ export function AttachmentManager({
                 >
                   ↓
                 </a>
-                <button
-                  type="button"
-                  onClick={() => onDelete(a.id)}
-                  className="rounded px-1.5 py-0.5 text-[11px] text-slate-400 hover:bg-status-blocked/10 hover:text-status-blocked"
-                  title="Remove"
-                >
-                  ✕
-                </button>
+                {!readOnly && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(a.id)}
+                    className="rounded px-1.5 py-0.5 text-[11px] text-slate-400 hover:bg-status-blocked/10 hover:text-status-blocked"
+                    title="Remove"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             </li>
           ))}

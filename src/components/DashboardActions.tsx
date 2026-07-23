@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { publishWeeklySnapshot } from "@/app/(app)/dashboard/actions";
 import { PublishPdfButton } from "./PublishPdfButton";
 
-export function DashboardActions() {
+export function DashboardActions({ canEdit = true }: { canEdit?: boolean }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "saving" | "done">("idle");
 
@@ -31,12 +31,16 @@ export function DashboardActions() {
         </svg>
         Export
       </a>
-      <button onClick={publish} disabled={state === "saving"} className="btn-ghost">
-        {state === "done" ? "Published ✓" : state === "saving" ? "Publishing…" : "Publish snapshot"}
-      </button>
-      <Link href="/tasks?new=1" className="btn-primary">
-        + New Task
-      </Link>
+      {canEdit && (
+        <button onClick={publish} disabled={state === "saving"} className="btn-ghost">
+          {state === "done" ? "Published ✓" : state === "saving" ? "Publishing…" : "Publish snapshot"}
+        </button>
+      )}
+      {canEdit && (
+        <Link href="/tasks?new=1" className="btn-primary">
+          + New Task
+        </Link>
+      )}
     </div>
   );
 }

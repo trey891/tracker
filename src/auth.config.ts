@@ -20,6 +20,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.initials = (user as { initials?: string }).initials;
         token.role = (user as { role?: string }).role;
+        token.access = (user as { access?: string }).access;
       }
       return token;
     },
@@ -28,6 +29,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.sub ?? session.user.id;
         session.user.initials = (token.initials as string) ?? "";
         session.user.role = (token.role as string) ?? "";
+        session.user.access = (token.access as string) ?? "";
       }
       return session;
     },

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { requireAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProjectId } from "@/lib/project";
 import type { Change, Proposal } from "@/lib/import/types";
@@ -9,8 +9,7 @@ import type { Change, Proposal } from "@/lib/import/types";
 // Apply the user-approved subset of a parsed import batch. Nothing is written
 // until this runs with explicit keys.
 export async function applyImport(batchId: string, acceptedKeys: string[]) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  const session = await requireAccess("contributor");
   const projectId = await getCurrentProjectId();
   if (!projectId) throw new Error("No project");
 
@@ -83,8 +82,7 @@ export async function applyImport(batchId: string, acceptedKeys: string[]) {
 }
 
 export async function discardImport(batchId: string) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireAccess("contributor");
   const projectId = await getCurrentProjectId();
   await prisma.importBatch.updateMany({ where: { id: batchId, projectId: projectId ?? undefined, status: "pending" }, data: { status: "discarded" } });
 }

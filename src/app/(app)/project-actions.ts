@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { requireAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { PROJECT_COOKIE } from "@/lib/project";
 
@@ -20,7 +21,7 @@ export async function switchProject(projectId: string) {
 }
 
 export async function createProject(formData: FormData) {
-  await requireSession();
+  await requireAccess("contributor");
   const name = String(formData.get("name") ?? "").trim();
   if (!name) throw new Error("Project name is required");
 

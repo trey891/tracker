@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { requireAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProjectId } from "@/lib/project";
 
 export async function deleteAttachment(id: string) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireAccess("contributor");
   const projectId = await getCurrentProjectId();
   const att = await prisma.attachment.findUnique({ where: { id }, select: { projectId: true } });
   if (!att || (projectId && att.projectId !== projectId)) throw new Error("Not found");
@@ -38,8 +38,7 @@ export async function listAttachments(where: { taskId?: string; allowanceId?: st
 
 // Edit an existing photo's date taken and/or description.
 export async function updatePhoto(id: string, data: { takenDate?: string | null; description?: string | null }) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireAccess("contributor");
   const projectId = await getCurrentProjectId();
   if (!projectId) throw new Error("No project");
 
@@ -57,8 +56,7 @@ export async function updatePhoto(id: string, data: { takenDate?: string | null;
 
 // Persist descriptions entered in the PDF photo picker before generating.
 export async function savePhotoDescriptions(updates: { id: string; description: string }[]) {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
+  await requireAccess("contributor");
   const projectId = await getCurrentProjectId();
   if (!projectId) throw new Error("No project");
   for (const u of updates) {

@@ -1,4 +1,4 @@
-import { auth } from "@/auth";
+import { getAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getCurrentProjectId } from "@/lib/project";
 import { extractPdfText } from "@/lib/import/pdf";
@@ -16,8 +16,9 @@ const near = (a: number | null | undefined, b: number | null | undefined) =>
   Math.abs((a ?? 0) - (b ?? 0)) < 1;
 
 export async function POST(request: Request) {
-  const session = await auth();
+  const { session, access } = await getAccess();
   if (!session?.user) return new Response("Unauthorized", { status: 401 });
+  if (access === "viewer") return new Response("Your account is view-only.", { status: 403 });
   const projectId = await getCurrentProjectId();
   if (!projectId) return new Response("No project", { status: 404 });
 

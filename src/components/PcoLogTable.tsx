@@ -45,7 +45,7 @@ type SortKey =
 
 const money0 = (n: number) => `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
-export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
+export function PcoLogTable({ pcos, readOnly }: { pcos: PcoDTO[]; readOnly?: boolean }) {
   const router = useRouter();
   const [rows, setRows] = useState<PcoDTO[]>(pcos);
   const [q, setQ] = useState("");
@@ -146,9 +146,11 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
           <span className="text-xs text-slate-500">
             {filtered.length} of {rows.length} PCOs
           </span>
-          <button onClick={() => setCreating(true)} className="btn-primary">
-            + Add PCO
-          </button>
+          {!readOnly && (
+            <button onClick={() => setCreating(true)} className="btn-primary">
+              + Add PCO
+            </button>
+          )}
         </div>
       </div>
 
@@ -171,14 +173,16 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
               <span className={`pill ${REASON_BADGE[p.reason] ?? ""}`}>{p.reason}</span>
             </div>
             {p.notes && <p className="mt-2 line-clamp-2 text-xs text-slate-400">{p.notes}</p>}
-            <div className="mt-3 flex gap-1 border-t border-line pt-2">
-              <button onClick={() => setEditing(p)} className="rounded-md px-2 py-1 text-xs text-slate-300 hover:bg-panel-2">
-                Edit
-              </button>
-              <button onClick={() => remove(p.id)} className="ml-auto rounded-md px-2 py-1 text-xs text-slate-400 hover:text-status-blocked">
-                Delete
-              </button>
-            </div>
+            {!readOnly && (
+              <div className="mt-3 flex gap-1 border-t border-line pt-2">
+                <button onClick={() => setEditing(p)} className="rounded-md px-2 py-1 text-xs text-slate-300 hover:bg-panel-2">
+                  Edit
+                </button>
+                <button onClick={() => remove(p.id)} className="ml-auto rounded-md px-2 py-1 text-xs text-slate-400 hover:text-status-blocked">
+                  Delete
+                </button>
+              </div>
+            )}
           </div>
         ))}
         {filtered.length === 0 && <p className="card p-6 text-center text-sm text-slate-500">No PCOs match your filters.</p>}
@@ -247,42 +251,44 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
               {filtered.map((p) => (
                 <tr key={p.id} className="border-b border-line/50 align-middle hover:bg-panel-2/30">
                   <td className="px-3 py-1.5">
-                    <EditText value={p.number ?? ""} onSave={(v) => save(p.id, { number: v || null })} className="w-16" placeholder="#" />
+                    <EditText disabled={readOnly} value={p.number ?? ""} onSave={(v) => save(p.id, { number: v || null })} className="w-16" placeholder="#" />
                   </td>
                   <td className="px-3 py-1.5 min-w-[220px]">
-                    <EditText value={p.scope} onSave={(v) => save(p.id, { scope: v })} className="w-full" />
+                    <EditText disabled={readOnly} value={p.scope} onSave={(v) => save(p.id, { scope: v })} className="w-full" />
                   </td>
                   <td className="px-3 py-1.5">
-                    <PillSelect value={p.status} options={PCO_STATUSES} badges={PCO_STATUS_BADGE} onChange={(v) => save(p.id, { status: v })} />
+                    <PillSelect disabled={readOnly} value={p.status} options={PCO_STATUSES} badges={PCO_STATUS_BADGE} onChange={(v) => save(p.id, { status: v })} />
                   </td>
                   <td className="px-3 py-1.5 text-right">
-                    <EditNumber value={p.value} onSave={(v) => save(p.id, { value: v })} />
+                    <EditNumber disabled={readOnly} value={p.value} onSave={(v) => save(p.id, { value: v })} />
                   </td>
                   <td className="px-3 py-1.5 text-right">
-                    <EditText value={p.oco ?? ""} onSave={(v) => save(p.id, { oco: v || null })} className="w-12 text-right" placeholder="—" />
+                    <EditText disabled={readOnly} value={p.oco ?? ""} onSave={(v) => save(p.id, { oco: v || null })} className="w-12 text-right" placeholder="—" />
                   </td>
                   <td className="px-3 py-1.5">
-                    <PlainSelect value={p.gcFunding ?? ""} options={["", ...GC_FUNDING]} onChange={(v) => save(p.id, { gcFunding: v || null })} />
+                    <PlainSelect disabled={readOnly} value={p.gcFunding ?? ""} options={["", ...GC_FUNDING]} onChange={(v) => save(p.id, { gcFunding: v || null })} />
                   </td>
                   <td className="px-3 py-1.5">
-                    <PillSelect value={p.creFunding} options={CRE_FUNDING} badges={FUNDING_BADGE} onChange={(v) => save(p.id, { creFunding: v })} />
+                    <PillSelect disabled={readOnly} value={p.creFunding} options={CRE_FUNDING} badges={FUNDING_BADGE} onChange={(v) => save(p.id, { creFunding: v })} />
                   </td>
                   <td className="px-3 py-1.5 text-right">
-                    <EditNumber value={p.contractorAllowance} onSave={(v) => save(p.id, { contractorAllowance: v })} />
+                    <EditNumber disabled={readOnly} value={p.contractorAllowance} onSave={(v) => save(p.id, { contractorAllowance: v })} />
                   </td>
                   <td className="px-3 py-1.5 text-right">
-                    <EditNumber value={p.contractorContingency} onSave={(v) => save(p.id, { contractorContingency: v })} />
+                    <EditNumber disabled={readOnly} value={p.contractorContingency} onSave={(v) => save(p.id, { contractorContingency: v })} />
                   </td>
                   <td className="px-3 py-1.5">
-                    <PillSelect value={p.reason} options={PCO_REASONS} badges={REASON_BADGE} onChange={(v) => save(p.id, { reason: v })} />
+                    <PillSelect disabled={readOnly} value={p.reason} options={PCO_REASONS} badges={REASON_BADGE} onChange={(v) => save(p.id, { reason: v })} />
                   </td>
                   <td className="px-3 py-1.5 min-w-[220px]">
-                    <EditText value={p.notes ?? ""} onSave={(v) => save(p.id, { notes: v || null })} className="w-full" placeholder="Add a note…" />
+                    <EditText disabled={readOnly} value={p.notes ?? ""} onSave={(v) => save(p.id, { notes: v || null })} className="w-full" placeholder="Add a note…" />
                   </td>
                   <td className="px-2 py-1.5">
-                    <button onClick={() => remove(p.id)} className="rounded px-1.5 py-0.5 text-xs text-slate-500 hover:bg-status-blocked/10 hover:text-status-blocked" title="Delete">
-                      ✕
-                    </button>
+                    {!readOnly && (
+                      <button onClick={() => remove(p.id)} className="rounded px-1.5 py-0.5 text-xs text-slate-500 hover:bg-status-blocked/10 hover:text-status-blocked" title="Delete">
+                        ✕
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -315,7 +321,7 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
           </table>
         </ScrollX>
       </div>
-      <p className="mt-2 hidden text-xs text-slate-500 md:block">Click any cell to edit. Changes save automatically.</p>
+      {!readOnly && <p className="mt-2 hidden text-xs text-slate-500 md:block">Click any cell to edit. Changes save automatically.</p>}
 
       {(creating || editing) && (
         <PcoModal
@@ -618,8 +624,9 @@ function HeaderFilter({
 }
 
 // ---------- inline cell editors ----------
-function PillSelect({ value, options, badges, onChange }: { value: string; options: readonly string[]; badges: Record<string, string>; onChange: (v: string) => void }) {
+function PillSelect({ value, options, badges, onChange, disabled }: { value: string; options: readonly string[]; badges: Record<string, string>; onChange: (v: string) => void; disabled?: boolean }) {
   const cls = badges[value] ?? "text-slate-300 bg-slate-500/10 ring-slate-500/30";
+  if (disabled) return <span className={`pill ${cls}`}>{value}</span>;
   return (
     <select
       value={value}
@@ -636,7 +643,8 @@ function PillSelect({ value, options, badges, onChange }: { value: string; optio
   );
 }
 
-function PlainSelect({ value, options, onChange }: { value: string; options: readonly string[]; onChange: (v: string) => void }) {
+function PlainSelect({ value, options, onChange, disabled }: { value: string; options: readonly string[]; onChange: (v: string) => void; disabled?: boolean }) {
+  if (disabled) return <span className="text-xs text-slate-300">{value || "—"}</span>;
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)} className="rounded-md border border-line bg-transparent px-2 py-1 text-xs text-slate-300 outline-none hover:border-slate-500">
       {options.map((o) => (
@@ -648,9 +656,10 @@ function PlainSelect({ value, options, onChange }: { value: string; options: rea
   );
 }
 
-function EditText({ value, onSave, className, placeholder }: { value: string; onSave: (v: string) => void; className?: string; placeholder?: string }) {
+function EditText({ value, onSave, className, placeholder, disabled }: { value: string; onSave: (v: string) => void; className?: string; placeholder?: string; disabled?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [v, setV] = useState(value);
+  if (disabled) return <span className={`truncate px-1.5 py-0.5 text-sm ${value ? "text-slate-200" : "text-slate-600"} ${className ?? ""}`}>{value || "—"}</span>;
   if (editing) {
     return (
       <input
@@ -687,10 +696,11 @@ function EditText({ value, onSave, className, placeholder }: { value: string; on
   );
 }
 
-function EditNumber({ value, onSave }: { value: number | null; onSave: (v: number | null) => void }) {
+function EditNumber({ value, onSave, disabled }: { value: number | null; onSave: (v: number | null) => void; disabled?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [v, setV] = useState(value?.toString() ?? "");
   const display = value == null ? "—" : value.toLocaleString("en-US");
+  if (disabled) return <span className={`px-1.5 py-0.5 text-right text-sm tabular-nums ${value == null ? "text-slate-600" : value < 0 ? "text-status-blocked" : "text-slate-200"}`}>{display}</span>;
   if (editing) {
     return (
       <input

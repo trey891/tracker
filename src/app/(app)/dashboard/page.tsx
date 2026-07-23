@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { auth } from "@/auth";
+import { getAccess } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import {
   getPrimaryProject,
@@ -19,7 +19,7 @@ import { money, pct, dueLabel } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const session = await auth();
+  const { session, access } = await getAccess();
   const project = await getPrimaryProject();
   if (!project) {
     return (
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
         title="Project Dashboard"
         subtitle={`${project.name} — at-a-glance health across every workstream`}
         user={session?.user ?? {}}
-        action={<DashboardActions />}
+        action={<DashboardActions canEdit={access !== "viewer"} />}
       />
 
       <p className="mb-5 text-sm text-slate-400">

@@ -1,6 +1,6 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getPrimaryProjectId } from "@/lib/data";
+import { getAccess } from "@/lib/authz";
 import { Topbar } from "@/components/Topbar";
 import { TaskManager, type TaskDTO } from "@/components/TaskManager";
 import { NoProject } from "@/components/EmptyState";
@@ -15,9 +15,9 @@ function toDateInput(d: Date | null): string | null {
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ new?: string; status?: string; workstream?: string; q?: string }>;
+  searchParams: Promise<{ new?: string; status?: string; workstream?: string; q?: string; lead?: string }>;
 }) {
-  const session = await auth();
+  const { session, access } = await getAccess();
   const sp = await searchParams;
   const projectId = await getPrimaryProjectId();
 
@@ -62,7 +62,9 @@ export default async function TasksPage({
         initialStatus={sp.status}
         initialWorkstream={sp.workstream}
         initialQuery={sp.q}
+        initialLead={sp.lead}
         openNew={sp.new === "1"}
+        readOnly={access === "viewer"}
       />
     </>
   );
