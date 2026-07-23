@@ -197,13 +197,15 @@ async function buildPco(projectId: string, rows: PcoRow[]): Promise<Proposal> {
 }
 
 async function buildDrawBudget(projectId: string, buf: ArrayBuffer): Promise<Proposal> {
-  const hits = await parseDrawBudget(buf);
+  const result = await parseDrawBudget(buf);
   const warnings: string[] = [];
-  if (hits.length === 0) warnings.push("No recognizable budget/draw totals found. This works best on labeled summary exports.");
-  const fin = await prisma.financialSnapshot.findFirst({ where: { projectId }, orderBy: { asOfDate: "desc" } });
   const changes: Change[] = [];
+
+  if (result.format === "unknown") warnings.push("Couldn't recognize this as a draw sheet or job-detail budget export.");
+
+  const fin = await prisma.financialSnapshot.findFirst({ where: { projectId }, orderBy: { asOfDate: "desc" } });
   if (fin) {
-    for (const h of hits) {
+    for (const h of result.financials) {
       const cur = (fin as unknown as Record<string, number | null>)[h.field] ?? null;
       changes.push({
         key: `financials.${h.field}`,
@@ -218,8 +220,57 @@ async function buildDrawBudget(projectId: string, buf: ArrayBuffer): Promise<Pro
         changed: !near(cur, h.value),
       });
     }
+    // GC/Construction retainage → financials, if the draw sheet carried it
+    if (result.gc?.retainage != null && !changes.some((c) => c.field === "retainage")) {
+      changes.push({
+        key: "financials.retainage",
+        target: "financials",
+        op: "update",
+        entityId: fin.id,
+        field: "retainage",
+        value: result.gc.retainage,
+        label: "Retainage",
+        currentDisplay: usd(fin.retainage),
+        proposedDisplay: usd(result.gc.retainage),
+        changed: !near(fin.retainage, result.gc.retainage),
+      });
+    }
   } else {
     warnings.push("No financial snapshot found for this project.");
   }
+
+  // GC/Construction line → Beck commitment
+  if (result.gc) {
+    const beck = await prisma.commitment.findFirst({
+      where: { projectId, vendor: { contains: "BECK", mode: "insensitive" } },
+      orderBy: { totalContract: "desc" },
+    });
+    if (beck) {
+      const g = result.gc;
+      const c = (field: string, label: string, cur: number | null, val: number | null) => {
+        if (val == null) return;
+        changes.push({
+          key: `commitment.${field}`,
+          target: "commitment",
+          op: "update",
+          entityId: beck.id,
+          field,
+          value: val,
+          label: `Beck — ${label}`,
+          currentDisplay: usd(cur),
+          proposedDisplay: usd(val),
+          changed: !near(cur, val),
+        });
+      };
+      c("originalContract", "Original Contract", beck.originalContract, g.original);
+      c("changeOrderAmount", "Change Orders", beck.changeOrderAmount, g.changeOrder);
+      c("totalContract", "Total Contract", beck.totalContract, g.total);
+      c("invoiced", "Invoiced", beck.invoiced, g.invoiced);
+      c("remaining", "Remaining", beck.remaining, g.remaining);
+    } else {
+      warnings.push("No 'Beck' commitment found — the GC/Construction line will be skipped.");
+    }
+  }
+
   return { summary: `Draw/budget: ${changes.filter((c) => c.changed).length} field(s) will change.`, changes, warnings };
 }

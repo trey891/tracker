@@ -4,6 +4,7 @@ import { getPrimaryProject, getTasks } from "@/lib/data";
 import { Topbar } from "@/components/Topbar";
 import { NoProject } from "@/components/EmptyState";
 import { StatusBadge } from "@/components/Badges";
+import { AddMemberButton, MemberActions } from "@/components/TeamAdmin";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function TeamPage() {
 
   return (
     <>
-      <Topbar title="Team" subtitle={`${users.length} members · ${project.name}`} user={session?.user ?? {}} />
+      <Topbar title="Team" subtitle={`${users.length} members · ${project.name}`} user={session?.user ?? {}} action={<AddMemberButton />} />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {users.map((u) => {
@@ -66,14 +67,15 @@ export default async function TeamPage() {
                 </ul>
               )}
               <div className="mt-4 text-xs text-slate-500">{u.email}</div>
+              <MemberActions member={{ id: u.id, name: u.name, email: u.email, initials: u.initials, role: u.role }} />
             </div>
           );
         })}
       </div>
 
       <p className="mt-6 text-xs text-slate-500">
-        Team accounts are created by the seed. To add or remove members, update the seed data or manage the{" "}
-        <code className="rounded bg-panel-2 px-1 py-0.5">User</code> table directly.
+        Use <span className="text-slate-300">Add member</span> to invite teammates, or <span className="text-slate-300">Edit</span> /
+        <span className="text-slate-300"> Set password</span> on a card to update their login. Everyone signs in with their email and password.
       </p>
     </>
   );
