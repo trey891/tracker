@@ -13,6 +13,7 @@ import {
 } from "@/lib/constants";
 import { createPco, updatePco, deletePco } from "@/app/(app)/pco-log/actions";
 import { MultiSelectFilter } from "./MultiSelectFilter";
+import { ScrollX } from "./ScrollX";
 
 export type PcoDTO = {
   id: string;
@@ -36,7 +37,8 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
   const [status, setStatus] = useState<string[]>([...PCO_STATUSES]);
   const [funding, setFunding] = useState<string[]>([...CRE_FUNDING]);
   const [reason, setReason] = useState<string[]>([...PCO_REASONS]);
-  const [busy, setBusy] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<PcoDTO | null>(null);
 
   // keep local rows in sync if the server sends new props after refresh
   useMemo(() => setRows(pcos), [pcos]);
@@ -59,16 +61,6 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
     router.refresh();
   }
 
-  async function add() {
-    setBusy(true);
-    try {
-      await createPco();
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function remove(id: string) {
     if (!confirm("Delete this PCO?")) return;
     setRows((rs) => rs.filter((r) => r.id !== id));
@@ -88,14 +80,47 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
           <span className="text-xs text-slate-500">
             {filtered.length} of {rows.length} PCOs
           </span>
-          <button onClick={add} disabled={busy} className="btn-primary">
+          <button onClick={() => setCreating(true)} className="btn-primary">
             + Add PCO
           </button>
         </div>
       </div>
 
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Mobile: card list */}
+      <div className="space-y-3 md:hidden">
+        {filtered.map((p) => (
+          <div key={p.id} className="card p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[11px] font-mono text-slate-500">{p.number ?? "—"}</div>
+                <div className="font-medium text-white">{p.scope}</div>
+              </div>
+              <span className={`pill shrink-0 ${PCO_STATUS_BADGE[p.status] ?? ""}`}>{p.status}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-semibold tabular-nums text-slate-200">
+                {p.value == null ? "—" : `$${p.value.toLocaleString("en-US")}`}
+              </span>
+              <span className={`pill ${FUNDING_BADGE[p.creFunding] ?? ""}`}>{p.creFunding}</span>
+              <span className={`pill ${REASON_BADGE[p.reason] ?? ""}`}>{p.reason}</span>
+            </div>
+            {p.notes && <p className="mt-2 line-clamp-2 text-xs text-slate-400">{p.notes}</p>}
+            <div className="mt-3 flex gap-1 border-t border-line pt-2">
+              <button onClick={() => setEditing(p)} className="rounded-md px-2 py-1 text-xs text-slate-300 hover:bg-panel-2">
+                Edit
+              </button>
+              <button onClick={() => remove(p.id)} className="ml-auto rounded-md px-2 py-1 text-xs text-slate-400 hover:text-status-blocked">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && <p className="card p-6 text-center text-sm text-slate-500">No PCOs match your filters.</p>}
+      </div>
+
+      {/* Desktop: editable table */}
+      <div className="card hidden md:block">
+        <ScrollX>
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead>
               <tr className="border-b border-line text-[11px] uppercase tracking-wide text-slate-500">
@@ -165,13 +190,175 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
               )}
             </tbody>
           </table>
-        </div>
+        </ScrollX>
       </div>
-      <p className="mt-2 text-xs text-slate-500">Click any cell to edit. Changes save automatically.</p>
+      <p className="mt-2 hidden text-xs text-slate-500 md:block">Click any cell to edit. Changes save automatically.</p>
+
+      {(creating || editing) && (
+        <PcoModal
+          pco={editing}
+          onClose={() => {
+            setCreating(false);
+            setEditing(null);
+          }}
+          onSaved={() => {
+            setCreating(false);
+            setEditing(null);
+            router.refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
 
+// ---------- Add / edit modal ----------
+function PcoModal({ pco, onClose, onSaved }: { pco: PcoDTO | null; onClose: () => void; onSaved: () => void }) {
+  const isEdit = !!pco;
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [f, setF] = useState({
+    number: pco?.number ?? "",
+    scope: pco?.scope ?? "",
+    status: pco?.status ?? "Pending",
+    value: pco?.value?.toString() ?? "",
+    oco: pco?.oco ?? "",
+    gcFunding: pco?.gcFunding ?? "",
+    creFunding: pco?.creFunding ?? "None/Other",
+    contractorAllowance: pco?.contractorAllowance?.toString() ?? "",
+    contractorContingency: pco?.contractorContingency?.toString() ?? "",
+    reason: pco?.reason ?? "Other",
+    notes: pco?.notes ?? "",
+  });
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setF((s) => ({ ...s, [k]: e.target.value }));
+
+  const num = (s: string) => {
+    const t = s.replace(/[$,]/g, "").trim();
+    if (!t) return null;
+    const n = Number(t);
+    return Number.isFinite(n) ? n : null;
+  };
+
+  async function submit() {
+    if (!f.scope.trim()) {
+      setError("Scope is required.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const patch = {
+        number: f.number.trim() || null,
+        scope: f.scope.trim(),
+        status: f.status,
+        value: num(f.value),
+        oco: f.oco.trim() || null,
+        gcFunding: f.gcFunding || null,
+        creFunding: f.creFunding,
+        contractorAllowance: num(f.contractorAllowance),
+        contractorContingency: num(f.contractorContingency),
+        reason: f.reason,
+        notes: f.notes.trim() || null,
+      };
+      if (isEdit) await updatePco(pco!.id, patch);
+      else await createPco(patch);
+      onSaved();
+    } catch (e) {
+      setError((e as Error).message);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div className="card max-h-[88vh] w-full max-w-lg overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-panel px-5 py-4">
+          <h3 className="text-base font-semibold text-white">{isEdit ? "Edit PCO" : "New PCO"}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
+        </div>
+        <div className="space-y-4 p-5">
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="label">PCO #</label>
+              <input value={f.number} onChange={set("number")} className="input" placeholder="e.g. 038" />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Status</label>
+              <select value={f.status} onChange={set("status")} className="input">
+                {PCO_STATUSES.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="label">Scope</label>
+            <input value={f.scope} onChange={set("scope")} required className="input" placeholder="What is this change for?" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="label">Value ($)</label>
+              <input value={f.value} onChange={set("value")} inputMode="decimal" className="input" placeholder="0" />
+            </div>
+            <div>
+              <label className="label">OCO #</label>
+              <input value={f.oco} onChange={set("oco")} className="input" placeholder="—" />
+            </div>
+            <div>
+              <label className="label">GC Funding</label>
+              <select value={f.gcFunding} onChange={set("gcFunding")} className="input">
+                <option value="">—</option>
+                {GC_FUNDING.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">CRE Funding</label>
+              <select value={f.creFunding} onChange={set("creFunding")} className="input">
+                {CRE_FUNDING.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">Contractor Allowance ($)</label>
+              <input value={f.contractorAllowance} onChange={set("contractorAllowance")} inputMode="decimal" className="input" placeholder="—" />
+            </div>
+            <div>
+              <label className="label">Contractor Contingency ($)</label>
+              <input value={f.contractorContingency} onChange={set("contractorContingency")} inputMode="decimal" className="input" placeholder="—" />
+            </div>
+            <div className="col-span-2">
+              <label className="label">Reason</label>
+              <select value={f.reason} onChange={set("reason")} className="input">
+                {PCO_REASONS.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="label">Notes</label>
+            <textarea value={f.notes} onChange={set("notes")} rows={2} className="input" placeholder="Context, references, follow-ups…" />
+          </div>
+          {error && <p className="rounded-lg bg-status-blocked/10 px-3 py-2 text-sm text-status-blocked ring-1 ring-status-blocked/30">{error}</p>}
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" onClick={onClose} className="btn-ghost">
+              Cancel
+            </button>
+            <button type="button" onClick={submit} disabled={saving} className="btn-primary">
+              {saving ? "Saving…" : isEdit ? "Save changes" : "Create PCO"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- inline cell editors ----------
 function PillSelect({ value, options, badges, onChange }: { value: string; options: readonly string[]; badges: Record<string, string>; onChange: (v: string) => void }) {
   const cls = badges[value] ?? "text-slate-300 bg-slate-500/10 ring-slate-500/30";
   return (

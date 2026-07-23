@@ -6,6 +6,7 @@ import { STATUSES, PRIORITIES, WORKSTREAMS } from "@/lib/constants";
 import { StatusBadge, PriorityBadge } from "./Badges";
 import { AttachmentManager } from "./AttachmentManager";
 import { MultiSelectFilter } from "./MultiSelectFilter";
+import { ScrollX } from "./ScrollX";
 import { createTask, updateTask, deleteTask } from "@/app/(app)/tasks/actions";
 
 export type TaskDTO = {
@@ -41,8 +42,11 @@ export function TaskManager({
 }) {
   const router = useRouter();
   const [q, setQ] = useState(initialQuery ?? "");
+  // Default view hides Done tasks; a deep link to a specific status overrides.
   const [status, setStatus] = useState<string[]>(
-    initialStatus && (STATUSES as readonly string[]).includes(initialStatus) ? [initialStatus] : [...STATUSES],
+    initialStatus && (STATUSES as readonly string[]).includes(initialStatus)
+      ? [initialStatus]
+      : STATUSES.filter((s) => s !== "Done"),
   );
   const [workstream, setWorkstream] = useState<string[]>(
     initialWorkstream && (WORKSTREAMS as readonly string[]).includes(initialWorkstream) ? [initialWorkstream] : [...WORKSTREAMS],
@@ -53,13 +57,21 @@ export function TaskManager({
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
-    return tasks.filter((t) => {
-      if (!status.includes(t.status)) return false;
-      if (!workstream.includes(t.workstream)) return false;
-      if (!priority.includes(t.priority)) return false;
-      if (q && !`${t.title} ${t.note ?? ""} ${t.lead ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
-      return true;
-    });
+    return tasks
+      .filter((t) => {
+        if (!status.includes(t.status)) return false;
+        if (!workstream.includes(t.workstream)) return false;
+        if (!priority.includes(t.priority)) return false;
+        if (q && !`${t.title} ${t.note ?? ""} ${t.lead ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
+        return true;
+      })
+      // earliest deadline first; tasks without a deadline sink to the bottom
+      .sort((a, b) => {
+        if (!a.deadline && !b.deadline) return 0;
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return a.deadline.localeCompare(b.deadline);
+      });
   }, [tasks, q, status, workstream, priority]);
 
   async function onDelete(id: string) {
@@ -93,9 +105,44 @@ export function TaskManager({
         </div>
       </div>
 
-      {/* Table */}
-      <div className="card overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Mobile: card list */}
+      <div className="space-y-3 md:hidden">
+        {filtered.map((t) => (
+          <div key={t.id} className="card p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 font-medium text-white">
+                  {t.topIssue && <span className="text-brand-soft">★</span>}
+                  <span className="truncate">{t.title}</span>
+                  {t.attachmentCount > 0 && <span className="text-[11px] text-slate-500">📎{t.attachmentCount}</span>}
+                </div>
+                <div className="mt-0.5 text-xs text-slate-500">
+                  {t.workstream} · {t.lead ?? "Unassigned"}
+                  {t.deadline ? ` · due ${t.deadline}` : ""}
+                </div>
+              </div>
+              <div className="shrink-0"><StatusBadge status={t.status} /></div>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <PriorityBadge priority={t.priority} />
+              {t.blocker && <span className="truncate text-xs text-status-blocked">⚠ {t.blocker}</span>}
+            </div>
+            <div className="mt-3 flex gap-1 border-t border-line pt-2">
+              <button onClick={() => setEditing(t)} className="rounded-md px-2 py-1 text-xs text-slate-300 hover:bg-panel-2">
+                Edit
+              </button>
+              <button onClick={() => onDelete(t.id)} disabled={busy} className="ml-auto rounded-md px-2 py-1 text-xs text-slate-400 hover:text-status-blocked">
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && <p className="card p-6 text-center text-sm text-slate-500">No tasks match your filters.</p>}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="card hidden md:block">
+        <ScrollX>
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead>
               <tr className="border-b border-line text-xs uppercase tracking-wide text-slate-500">
@@ -147,7 +194,7 @@ export function TaskManager({
               )}
             </tbody>
           </table>
-        </div>
+        </ScrollX>
       </div>
 
       {(creating || editing) && (

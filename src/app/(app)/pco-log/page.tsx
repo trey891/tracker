@@ -7,6 +7,7 @@ import { AddAllowanceButton, AllowanceActions } from "@/components/PcoEditors";
 import { PcoLogTable, type PcoDTO } from "@/components/PcoLogTable";
 import { AttachmentManager, type AttachmentMeta } from "@/components/AttachmentManager";
 import { ImportButton } from "@/components/ImportDialog";
+import { ScrollX } from "@/components/ScrollX";
 import { PCO_STATUSES, PCO_STATUS_COLOR, PCO_STATUS_BADGE, REASON_BADGE, FUNDING_BADGE } from "@/lib/constants";
 import { money, pct } from "@/lib/format";
 
@@ -129,7 +130,7 @@ export default async function CostTrackingPage() {
         user={session?.user ?? {}}
         action={
           <div className="flex items-center gap-2">
-            <ImportButton hint="pcolog" label="Import PCO log" />
+            <ImportButton label="Import" />
             <a href="/api/export/pcos" className="btn-ghost">
               Export CSV
             </a>
@@ -201,7 +202,7 @@ export default async function CostTrackingPage() {
       </section>
 
       {/* Exhibit F */}
-      <section className="card mt-4 overflow-hidden">
+      <section className="card mt-4">
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <span className="eyebrow">Use of allowances (Exhibit F)</span>
@@ -209,7 +210,7 @@ export default async function CostTrackingPage() {
           </div>
           <AddAllowanceButton />
         </div>
-        <div className="overflow-x-auto">
+        <ScrollX>
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead>
               <tr className="border-y border-line text-xs uppercase tracking-wide text-slate-500">
@@ -254,7 +255,7 @@ export default async function CostTrackingPage() {
               </tr>
             </tbody>
           </table>
-        </div>
+        </ScrollX>
       </section>
 
       {/* Editable PCO log */}

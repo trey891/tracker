@@ -27,6 +27,15 @@ body {
   border-radius: 8px;
 }
 
+/* Hide a pane's own scrollbar (ScrollX provides a synced sticky one) */
+.scrollbar-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 @layer components {
   .card {
     @apply rounded-2xl border border-line bg-panel/80 shadow-card;

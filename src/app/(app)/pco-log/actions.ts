@@ -83,13 +83,29 @@ type PcoPatch = {
   notes?: string | null;
 };
 
-export async function createPco() {
+export async function createPco(fields?: PcoPatch) {
   await requireSession();
   const projectId = await getCurrentProjectId();
   if (!projectId) throw new Error("No project");
   const last = await prisma.pco.findFirst({ where: { projectId }, orderBy: { orderIndex: "desc" } });
   const created = await prisma.pco.create({
-    data: { projectId, orderIndex: (last?.orderIndex ?? -1) + 1, scope: "New PCO", status: "Pending", reason: "Other", creFunding: "None/Other" },
+    data: {
+      projectId,
+      orderIndex: (last?.orderIndex ?? -1) + 1,
+      scope: fields?.scope?.trim() || "New PCO",
+      status: fields?.status ?? "Pending",
+      reason: fields?.reason ?? "Other",
+      creFunding: fields?.creFunding ?? "None/Other",
+      number: fields?.number ?? null,
+      value: fields?.value ?? null,
+      oco: fields?.oco ?? null,
+      gcFunding: fields?.gcFunding ?? null,
+      contractorAllowance: fields?.contractorAllowance ?? null,
+      buyout: fields?.buyout ?? null,
+      contractorContingency: fields?.contractorContingency ?? null,
+      recoupableCosts: fields?.recoupableCosts ?? null,
+      notes: fields?.notes ?? null,
+    },
   });
   refresh();
   return created.id;

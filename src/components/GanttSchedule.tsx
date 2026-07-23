@@ -70,8 +70,8 @@ export function GanttSchedule({
   }
 
   const c = light
-    ? { label: "text-gray-800", bar: "#6d5cff", dot: "#4c3fd6", date: "text-gray-700", grid: "#e5e7eb", tick: "text-gray-500", pos: "text-emerald-600", neg: "text-rose-600", muted: "text-gray-400", marker: "#dc2626", ring: "#fff" }
-    : { label: "text-white", bar: "#7c5cff", dot: "#a48bff", date: "text-slate-300", grid: "#232734", tick: "text-slate-500", pos: "text-status-ontrack", neg: "text-status-blocked", muted: "text-slate-500", marker: "#f87171", ring: "#0a0b0f" };
+    ? { label: "text-gray-800", bar: "#6d5cff", dot: "#4c3fd6", doneBar: "#22c55e", doneDot: "#15803d", date: "text-gray-700", grid: "#e5e7eb", tick: "text-gray-500", pos: "text-emerald-600", neg: "text-rose-600", muted: "text-gray-400", marker: "#dc2626", ring: "#fff" }
+    : { label: "text-white", bar: "#7c5cff", dot: "#a48bff", doneBar: "#22c55e", doneDot: "#4ade80", date: "text-slate-300", grid: "#232734", tick: "text-slate-500", pos: "text-status-ontrack", neg: "text-status-blocked", muted: "text-slate-500", marker: "#f87171", ring: "#0a0b0f" };
 
   const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
   const markerPct = marker ? posOf(marker.getTime()) : null;
@@ -112,6 +112,8 @@ export function GanttSchedule({
         {rows.map((r, i) => {
           const pct = posOf(r.current!.getTime());
           const varDays = r.base ? Math.round((r.current!.getTime() - r.base.getTime()) / DAY) : null;
+          // achieved milestones (current date in the past) render green
+          const achieved = r.current!.getTime() < Date.now();
           return (
             <div key={i} className="flex items-center">
               <div className={`w-36 shrink-0 truncate pr-2 text-[11px] font-medium sm:w-48 ${c.label}`} title={r.description}>
@@ -119,8 +121,8 @@ export function GanttSchedule({
               </div>
               <div className="relative h-4 flex-1">
                 {Overlay}
-                <div className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full" style={{ left: 0, width: `${Math.max(1.5, pct)}%`, background: c.bar }} />
-                <div className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ left: `${pct}%`, background: c.dot, border: `1px solid ${c.ring}` }} />
+                <div className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full" style={{ left: 0, width: `${Math.max(1.5, pct)}%`, background: achieved ? c.doneBar : c.bar }} />
+                <div className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ left: `${pct}%`, background: achieved ? c.doneDot : c.dot, border: `1px solid ${c.ring}` }} />
               </div>
               <div className="w-24 shrink-0 pl-2 text-right">
                 <span className={`text-[10px] tabular-nums ${c.date}`}>{fmt(r.current!)}</span>

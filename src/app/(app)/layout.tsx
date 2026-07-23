@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/Sidebar";
+import { MobileNav } from "@/components/MobileNav";
 import { getAllProjects, getCurrentProjectId } from "@/lib/project";
 
 export const dynamic = "force-dynamic";
@@ -9,8 +10,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="min-h-screen bg-canvas">
       <Sidebar projects={projects} currentProjectId={currentProjectId} />
+      <MobileNav projects={projects} currentProjectId={currentProjectId} />
       <main className="md:pl-56">
-        <div className="mx-auto max-w-[1400px] px-5 py-6 md:px-8">{children}</div>
+        <div className="mx-auto max-w-none px-4 pb-6 pt-[4.5rem] md:px-8 md:pt-6">{children}</div>
       </main>
     </div>
   );

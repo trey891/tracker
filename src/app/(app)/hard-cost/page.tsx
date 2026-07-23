@@ -12,6 +12,7 @@ import {
   MilestoneActions,
 } from "@/components/HardCostEditors";
 import { ImportButton } from "@/components/ImportDialog";
+import { ScrollX } from "@/components/ScrollX";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,7 @@ export default async function HardCostPage() {
         user={session?.user ?? {}}
         action={
           <div className="flex items-center gap-2">
-            <ImportButton hint="payapp" label="Import pay app" />
+            <ImportButton hint="payapp" label="Import" />
             <EditFinancialsButton initial={finInitial} asOfDate={iso(f?.asOfDate ?? null)} />
           </div>
         }
@@ -131,7 +132,7 @@ export default async function HardCostPage() {
       </div>
 
       {/* Commitments */}
-      <section className="card mt-4 overflow-hidden">
+      <section className="card mt-4">
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <span className="eyebrow">Commitments register</span>
@@ -142,7 +143,7 @@ export default async function HardCostPage() {
             <AddCommitmentButton />
           </div>
         </div>
-        <div className="overflow-x-auto">
+        <ScrollX>
           <table className="w-full min-w-[860px] text-left text-sm">
             <thead>
               <tr className="border-y border-line text-xs uppercase tracking-wide text-slate-500">
@@ -171,11 +172,11 @@ export default async function HardCostPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollX>
       </section>
 
       {/* Milestones */}
-      <section className="card mt-4 overflow-hidden">
+      <section className="card mt-4">
         <div className="flex items-center justify-between px-5 py-4">
           <div>
             <span className="eyebrow">Schedule</span>
@@ -183,7 +184,7 @@ export default async function HardCostPage() {
           </div>
           <AddMilestoneButton />
         </div>
-        <div className="overflow-x-auto">
+        <ScrollX>
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-y border-line text-xs uppercase tracking-wide text-slate-500">
@@ -210,7 +211,7 @@ export default async function HardCostPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollX>
       </section>
     </>
   );

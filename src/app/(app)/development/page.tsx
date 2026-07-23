@@ -6,6 +6,7 @@ import { StatCard } from "@/components/StatCard";
 import { ProjectLink } from "@/components/ProjectLink";
 import { StatusBadge } from "@/components/Badges";
 import { EmptyState } from "@/components/EmptyState";
+import { ScrollX } from "@/components/ScrollX";
 import { money, pct, fullDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -85,12 +86,12 @@ export default async function DevelopmentDashboard() {
       </div>
 
       {/* Projects rollup */}
-      <section className="card mt-4 overflow-hidden">
+      <section className="card mt-4">
         <div className="px-5 py-4">
           <span className="eyebrow">Portfolio</span>
           <h2 className="mt-1 text-lg font-semibold text-white">Projects</h2>
         </div>
-        <div className="overflow-x-auto">
+        <ScrollX>
           <table className="w-full min-w-[980px] text-left text-sm">
             <thead>
               <tr className="border-y border-line text-xs uppercase tracking-wide text-slate-500">
@@ -160,7 +161,7 @@ export default async function DevelopmentDashboard() {
               })}
             </tbody>
           </table>
-        </div>
+        </ScrollX>
       </section>
 
       {/* Schedule rollup */}

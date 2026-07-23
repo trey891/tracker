@@ -5,9 +5,9 @@ import { usePathname } from "next/navigation";
 import { Logo } from "./Logo";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 
-const PORTFOLIO_NAV = [{ href: "/development", label: "Development Dashboard", icon: "building" }] as const;
+export const PORTFOLIO_NAV = [{ href: "/development", label: "Development Dashboard", icon: "building" }] as const;
 
-const PROJECT_NAV = [
+export const PROJECT_NAV = [
   { href: "/dashboard", label: "Project Dashboard", icon: "grid" },
   { href: "/tasks", label: "Tasks", icon: "list" },
   { href: "/hard-cost", label: "Construction Overview", icon: "wallet" },
@@ -16,6 +16,10 @@ const PROJECT_NAV = [
   { href: "/team", label: "Team", icon: "users" },
   { href: "/analytics", label: "Analytics", icon: "chart" },
 ] as const;
+
+export function NavIcon({ name }: { name: string }) {
+  return <Icon name={name} />;
+}
 
 function Icon({ name }: { name: string }) {
   const common = { width: 18, height: 18, fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
