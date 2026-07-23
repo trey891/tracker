@@ -1,0 +1,276 @@
+// Pulse — construction project tracker
+// Multi-project data model. Financial figures are stored as Float (the source
+// report figures are already rounded); status/priority/workstream are Strings
+// validated at the app layer (see src/lib/constants.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Direct (non-pooled) connection used for schema push / migrations. For a
+  // pooled provider like Neon/Supabase set this to the DIRECT connection string;
+  // for a plain local Postgres set it equal to DATABASE_URL.
+  directUrl = env("DIRECT_URL")
+}
+
+// ---- Auth / team ----------------------------------------------------------
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  initials     String
+  role         String
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+// ---- Core project ---------------------------------------------------------
+model Project {
+  id         String   @id @default(cuid())
+  name       String
+  code       String?
+  client     String?
+  location   String?
+  asOfDate   DateTime?
+  reportDate DateTime?
+
+  // Team roles (denormalized labels from the weekly report header)
+  projectExec       String?
+  construction      String?
+  projectManagement String?
+  coordinator       String?
+
+  // Weather days
+  weatherContractDays   Int?
+  weatherUsedThisPeriod Int?
+  weatherTotalUsed      Int?
+  weatherBalance        Int?
+
+  // Submittals
+  submittalsSubmitted  Int?
+  submittalsReturned   Int?
+  submittalsOutstanding Int?
+
+  createdAt DateTime @default(now())
+
+  tasks           Task[]
+  financials      FinancialSnapshot[]
+  pcoSummary      PcoSummary?
+  pcoBuckets      PcoStatusBucket[]
+  pcoReasons      PcoReason[]
+  pcoFunding      PcoFundingSource[]
+  allowances      Allowance[]
+  commitments     Commitment[]
+  milestones      Milestone[]
+  designIssuances DesignIssuance[]
+  lookahead       LookaheadItem[]
+  weeklyStatus    WeeklyStatus[]
+}
+
+// ---- Tasks ----------------------------------------------------------------
+model Task {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title      String
+  workstream String
+  status     String    @default("On Track")
+  priority   String    @default("Medium")
+  lead       String? // team member initials
+  deadline   DateTime?
+  note       String?
+  blocker    String?
+  topIssue   Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([projectId])
+}
+
+// ---- Hard/soft cost snapshot ----------------------------------------------
+model FinancialSnapshot {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  asOfDate  DateTime
+
+  originalBudget       Float?
+  approvedChanges      Float?
+  reallocationsFromTI  Float?
+  currentBudget        Float?
+
+  commitments          Float?
+  nonContractedInvoiced Float?
+  ffeAllowance         Float?
+  currentCommitments   Float?
+  uncommittedBudget    Float?
+
+  costsToDate          Float?
+  unspentCommitments   Float?
+
+  allowances                       Float?
+  pendingCosPcos                   Float?
+  forecasted                       Float?
+  overUnderBeforeContingency       Float?
+  projectedFinalCost               Float?
+  contingencyNeeded                Float?
+  contingencyBalance               Float?
+  trendingContingencyAtCompletion  Float?
+  contractorContingency            Float?
+
+  pcosApprovedPendingCo    Float?
+  pcosApprovedPendingCoQty Int?
+  pcosPending              Float?
+  pcosPendingQty           Int?
+  totalPcos                Float?
+  totalPcosQty             Int?
+  cosApproved              Float?
+  cosApprovedQty           Int?
+  totalCos                 Float?
+  totalCosQty              Int?
+
+  softCostBudget              Float?
+  softCostCommitments         Float?
+  softCostContingency         Float?
+  softCostUncommitted         Float?
+  softCostContingencyBalance  Float?
+
+  equityBudget     Float?
+  equityRequested  Float?
+  loanBudget       Float?
+  loanRequested    Float?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+// ---- PCOs -----------------------------------------------------------------
+model PcoSummary {
+  id                  String  @id @default(cuid())
+  projectId           String  @unique
+  project             Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  totalPcos           Int?
+  totalValue          Float?
+  originalContractSum Float?
+  currentContract     Float?
+}
+
+model PcoStatusBucket {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  status    String
+  count     Int
+  value     Float
+
+  @@index([projectId])
+}
+
+model PcoReason {
+  id            String  @id @default(cuid())
+  projectId     String
+  project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reason        String
+  count         Int
+  value         Float
+  pctOfApproved Float?
+
+  @@index([projectId])
+}
+
+model PcoFundingSource {
+  id          String  @id @default(cuid())
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  source      String
+  count       Int
+  value       Float
+  pctOfFunded Float?
+
+  @@index([projectId])
+}
+
+model Allowance {
+  id          String  @id @default(cuid())
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  amount      Float
+  used        Float
+  balance     Float
+  pcReference String?
+
+  @@index([projectId])
+}
+
+// ---- Commitments ----------------------------------------------------------
+model Commitment {
+  id                String    @id @default(cuid())
+  projectId         String
+  project           Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  vendor            String
+  contract          String?
+  startDate         DateTime?
+  endDate           DateTime?
+  status            String    @default("Approved")
+  originalContract  Float?
+  changeOrderAmount Float?
+  totalContract     Float?
+  pendingCos        Float?
+  invoiced          Float?
+  remaining         Float?
+
+  @@index([projectId])
+}
+
+// ---- Schedule -------------------------------------------------------------
+model Milestone {
+  id           String    @id @default(cuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  seq          Int?
+  description  String
+  baseDate     DateTime?
+  contractDate DateTime?
+  currentDate  DateTime?
+  varianceDays Int?
+
+  @@index([projectId])
+}
+
+model DesignIssuance {
+  id           String    @id @default(cuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  description  String
+  receivedDate DateTime?
+
+  @@index([projectId])
+}
+
+model LookaheadItem {
+  id          String  @id @default(cuid())
+  projectId   String
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  description String
+
+  @@index([projectId])
+}
+
+model WeeklyStatus {
+  id              String  @id @default(cuid())
+  projectId       String
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  week            String
+  orderIndex      Int
+  onTrack         Int
+  needsAttention  Int
+  blocked         Int
+  done            Int
+
+  @@index([projectId])
+}

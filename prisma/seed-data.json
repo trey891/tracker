@@ -1,0 +1,850 @@
+{
+  "project": {
+    "name": "The Crescent Offices on 7th",
+    "code": "174249.10",
+    "client": "GPIF CD II",
+    "location": "Fort Worth, TX",
+    "grossAreaSf": null,
+    "asOfDate": "2026-05-20",
+    "reportDate": "2026-07-22",
+    "team": {
+      "projectExec": "Kevin Crum",
+      "construction": "Travis Rieff",
+      "projectManagement": "Trey Wallette",
+      "coordinator": "Linda Williams"
+    }
+  },
+  "team": [
+    {
+      "initials": "KC",
+      "name": "Kevin Crum",
+      "role": "Project Executive",
+      "email": "kevin.crum@crescent.example"
+    },
+    {
+      "initials": "TR",
+      "name": "Travis Rieff",
+      "role": "Construction",
+      "email": "travis.rieff@crescent.example"
+    },
+    {
+      "initials": "TW",
+      "name": "Trey Wallette",
+      "role": "Director, Development",
+      "email": "dewallette@gmail.com"
+    },
+    {
+      "initials": "LW",
+      "name": "Linda Williams",
+      "role": "Project Coordinator",
+      "email": "linda.williams@crescent.example"
+    }
+  ],
+  "tasks": [
+    {
+      "title": "East retail exterior experience",
+      "workstream": "Tenant Coordination",
+      "lead": "KC",
+      "status": "Needs Attention",
+      "priority": "High",
+      "topIssue": true,
+      "deadline": null,
+      "note": "Awaiting Leasing update from Greenpoint on retail exterior scope."
+    },
+    {
+      "title": "Exterior Brick",
+      "workstream": "Construction",
+      "lead": "TR",
+      "status": "On Track",
+      "priority": "Medium",
+      "topIssue": true,
+      "deadline": null,
+      "note": "Rieff progressing with photo referencing on brick coursing."
+    },
+    {
+      "title": "Art",
+      "workstream": "FF&E",
+      "lead": "LW",
+      "status": "Needs Attention",
+      "priority": "High",
+      "topIssue": true,
+      "deadline": "2026-07-03",
+      "note": "JT following up with Aimee on art program selections."
+    },
+    {
+      "title": "Overhead Data Take Down",
+      "workstream": "Construction",
+      "lead": "TW",
+      "status": "Blocked",
+      "priority": "High",
+      "topIssue": true,
+      "deadline": "2026-07-31",
+      "note": "Boring done; still need pole take down. Provider hasn't scheduled removal.",
+      "blocker": "Provider hasn't scheduled removal."
+    },
+    {
+      "title": "Monument Signage",
+      "workstream": "Signage",
+      "lead": "TR",
+      "status": "Needs Attention",
+      "priority": "Medium",
+      "topIssue": true,
+      "deadline": "2026-07-07",
+      "note": "TR reviewed; pending review by JP."
+    },
+    {
+      "title": "Locker room revisions",
+      "workstream": "Design",
+      "lead": "TR",
+      "status": "On Track",
+      "priority": "Low",
+      "topIssue": false,
+      "deadline": null,
+      "note": "Rieff holding GFF Additional Services proposal."
+    },
+    {
+      "title": "MTC Levels 3, 4, 5",
+      "workstream": "Construction",
+      "lead": "TW",
+      "status": "Blocked",
+      "priority": "High",
+      "topIssue": false,
+      "deadline": null,
+      "note": "Need to choose Beck or find other contractor. Pending JPM award decision.",
+      "blocker": "Pending JPM award decision."
+    },
+    {
+      "title": "OS&E - Fitness / Tenant Lounge",
+      "workstream": "Property Management",
+      "lead": "LW",
+      "status": "Needs Attention",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": "2026-09-01",
+      "note": "TR/LW/KL reviewed. LW to prepare a budget."
+    },
+    {
+      "title": "Beck accelerating LVL2 finishout",
+      "workstream": "Tenant Coordination",
+      "lead": "LW",
+      "status": "On Track",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": "2026-08-01",
+      "note": "AC will be in September; should talk to Beck on sequencing."
+    },
+    {
+      "title": "GFF Art Selections",
+      "workstream": "FF&E",
+      "lead": "LW",
+      "status": "Needs Attention",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": null,
+      "note": "Pivoting pavilion entry and PM wall art direction."
+    },
+    {
+      "title": "Art & FF&E install (May/June 2027 target)",
+      "workstream": "FF&E",
+      "lead": "LW",
+      "status": "On Track",
+      "priority": "Low",
+      "topIssue": false,
+      "deadline": "2026-11-01",
+      "note": "Need deposits made by December to hold lead times."
+    },
+    {
+      "title": "Tangram Contract",
+      "workstream": "FF&E",
+      "lead": "LW",
+      "status": "Needs Attention",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": "2026-07-03",
+      "note": "Awaiting Product & Services Agreement from vendor."
+    },
+    {
+      "title": "Finalize Signage Package",
+      "workstream": "Signage",
+      "lead": "TR",
+      "status": "On Track",
+      "priority": "High",
+      "topIssue": false,
+      "deadline": "2026-06-22",
+      "note": "TR to send the package today. Buyout targeted for 6/30. Follow up with Mariah."
+    },
+    {
+      "title": "Signage buyout",
+      "workstream": "Signage",
+      "lead": "TR",
+      "status": "On Track",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": "2026-06-30",
+      "note": "GMP, holding PC54 $159,842. Out to bid."
+    },
+    {
+      "title": "JPM Design Progress",
+      "workstream": "Tenant Coordination",
+      "lead": "TR",
+      "status": "On Track",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": null,
+      "note": "Full CDs Sept '26; confirm KL reviewing."
+    },
+    {
+      "title": "Design Guidelines",
+      "workstream": "Design",
+      "lead": "LW",
+      "status": "Needs Attention",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": "2026-07-14",
+      "note": "7/9 tenant signage added. Have questions on controlled access (cards). Linda to confirm deadline.",
+      "blocker": "Need controlled access card list."
+    },
+    {
+      "title": "JPM TI Turnover",
+      "workstream": "Tenant Coordination",
+      "lead": "TW",
+      "status": "Done",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": "2026-05-29",
+      "note": "3/15 turnover to JPM completed."
+    },
+    {
+      "title": "Ductwork Design",
+      "workstream": "Design",
+      "lead": "TR",
+      "status": "On Track",
+      "priority": "Low",
+      "topIssue": false,
+      "deadline": null,
+      "note": "Need to send pricing to JPM."
+    },
+    {
+      "title": "Data Service \u2014 Life Safety",
+      "workstream": "Construction",
+      "lead": "TW",
+      "status": "Needs Attention",
+      "priority": "High",
+      "topIssue": false,
+      "deadline": "2026-07-15",
+      "note": "Staying with MDLaw; data live mid-September. ATT agreement pending KL."
+    },
+    {
+      "title": "Data Service (Server room)",
+      "workstream": "Construction",
+      "lead": "TR",
+      "status": "Blocked",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": null,
+      "note": "Get TJ in the loop. Who's going to manage the server room?",
+      "blocker": "Server room ownership unresolved."
+    },
+    {
+      "title": "Inspection Fees",
+      "workstream": "Permitting",
+      "lead": "TW",
+      "status": "On Track",
+      "priority": "Low",
+      "topIssue": false,
+      "deadline": "2026-08-30",
+      "note": "Estimate additional inspection fee deposit."
+    },
+    {
+      "title": "Water Meter Install",
+      "workstream": "Permitting",
+      "lead": "TW",
+      "status": "Done",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": "2026-07-15",
+      "note": "Inspection completed. Fire line inspection lead time of 6 weeks."
+    },
+    {
+      "title": "Discharge Agreement",
+      "workstream": "Permitting",
+      "lead": "TW",
+      "status": "Blocked",
+      "priority": "High",
+      "topIssue": true,
+      "deadline": "2026-07-17",
+      "note": "In the city's court to update entity. Following up Wednesday.",
+      "blocker": "Waiting on City of Fort Worth entity update."
+    },
+    {
+      "title": "Keys to post master",
+      "workstream": "Property Management",
+      "lead": "TW",
+      "status": "On Track",
+      "priority": "Low",
+      "topIssue": false,
+      "deadline": "2027-07-01",
+      "note": "TBD when to start."
+    },
+    {
+      "title": "Screening of MF Roof",
+      "workstream": "Construction",
+      "lead": "TR",
+      "status": "On Track",
+      "priority": "Low",
+      "topIssue": false,
+      "deadline": null,
+      "note": "Design proposal received. Ideas next week."
+    },
+    {
+      "title": "String Lights",
+      "workstream": "Construction",
+      "lead": "TR",
+      "status": "On Track",
+      "priority": "Low",
+      "topIssue": false,
+      "deadline": null,
+      "note": "Contract pending."
+    },
+    {
+      "title": "Loan opening",
+      "workstream": "Budget & Finance",
+      "lead": "TW",
+      "status": "On Track",
+      "priority": "Medium",
+      "topIssue": false,
+      "deadline": null,
+      "note": "Draw issued; funding pending."
+    }
+  ],
+  "financials": {
+    "asOfDate": "2026-05-20",
+    "originalBudget": 77151128.97,
+    "approvedChanges": 0,
+    "reallocationsFromTI": 593017,
+    "currentBudget": 77744145.97,
+    "commitments": 75414575,
+    "nonContractedInvoiced": 440158.89,
+    "ffeAllowance": 612601.74,
+    "currentCommitments": 76467335.63,
+    "uncommittedBudget": 1276810.3400000036,
+    "costsToDate": 49644719.84,
+    "unspentCommitments": 26822615.78999999,
+    "allowances": 1276810.3400000036,
+    "pendingCosPcos": -169909.79,
+    "forecasted": -1229330,
+    "overUnderBeforeContingency": 122429.44999999646,
+    "projectedFinalCost": 77866575.42,
+    "contingencyNeeded": 122429.45000000298,
+    "contingencyBalance": 2700289.54,
+    "trendingContingencyAtCompletion": 2577860.089999997,
+    "contractorContingency": 1323576,
+    "pcosApprovedPendingCo": 74945,
+    "pcosApprovedPendingCoQty": 2,
+    "pcosPending": 169909.79,
+    "pcosPendingQty": 4,
+    "totalPcos": 244854.79,
+    "totalPcosQty": 6,
+    "cosApproved": 2365549,
+    "cosApprovedQty": 28,
+    "totalCos": 2365549,
+    "totalCosQty": 28,
+    "softCostBudget": 4399110.63,
+    "softCostCommitments": 3873604.0900000003,
+    "softCostContingency": 267570.51,
+    "softCostUncommitted": 525506.5399999996,
+    "softCostContingencyBalance": 267570.51,
+    "equityBudget": 56629979,
+    "equityRequested": 56629979,
+    "loanBudget": 69100000,
+    "loanRequested": 1270900.25
+  },
+  "pcoSummary": {
+    "totalPcos": 60,
+    "totalValue": 2610403.79,
+    "approvedCount": 36,
+    "approvedValue": 2440494,
+    "pendingCount": 5,
+    "pendingValue": 23164.440000000002,
+    "romCount": 15,
+    "romValue": 146745.35,
+    "voidedCount": 4,
+    "voidedValue": 0,
+    "originalContractSum": 72756301,
+    "currentContract": 75196795
+  },
+  "pcoReasons": [
+    {
+      "reason": "Owner Change",
+      "count": 11,
+      "value": 974334,
+      "pctOfApproved": 0.3992363841091189
+    },
+    {
+      "reason": "Tenant Request",
+      "count": 10,
+      "value": 593017,
+      "pctOfApproved": 0.24299055846890014
+    },
+    {
+      "reason": "Design Error",
+      "count": 7,
+      "value": 639850,
+      "pctOfApproved": 0.26218052574601697
+    },
+    {
+      "reason": "Other/Blank",
+      "count": 8,
+      "value": 233293,
+      "pctOfApproved": 0.09559253167596396
+    }
+  ],
+  "pcoFunding": [
+    {
+      "source": "Owner Allowance",
+      "count": 19,
+      "value": 1670540,
+      "pctOfFunded": 0.6399546332255364
+    },
+    {
+      "source": "TI Allowance",
+      "count": 10,
+      "value": 593017,
+      "pctOfFunded": 0.22717443265740891
+    },
+    {
+      "source": "(None/Other)",
+      "count": 22,
+      "value": 346846.79000000004,
+      "pctOfFunded": 0.13287093411705475
+    }
+  ],
+  "allowances": [
+    {
+      "name": "03.00 - Tower Crane Leaveout",
+      "amount": 21500,
+      "used": 21500,
+      "balance": 0,
+      "pcReference": "PC004"
+    },
+    {
+      "name": "03.00 - Pier Reconciliation",
+      "amount": 25000,
+      "used": 17500,
+      "balance": 7500,
+      "pcReference": "PC016"
+    },
+    {
+      "name": "05.00 - Fire Command Cat Walk Steel",
+      "amount": 40000,
+      "used": 40000,
+      "balance": 0,
+      "pcReference": "PC001"
+    },
+    {
+      "name": "06.20 - Lobby Desk",
+      "amount": 50000,
+      "used": 45431.8,
+      "balance": 4568.199999999997,
+      "pcReference": "PC036"
+    },
+    {
+      "name": "06.20 - Property Management Desk",
+      "amount": 50000,
+      "used": 40407.2,
+      "balance": 9592.800000000003,
+      "pcReference": "PC036"
+    },
+    {
+      "name": "09.00 - Jewel Box",
+      "amount": 670000,
+      "used": 670000,
+      "balance": 0,
+      "pcReference": "PC002"
+    },
+    {
+      "name": "09.22 - Exterior Fa\u00e7ade Mockup",
+      "amount": 75000,
+      "used": 0,
+      "balance": 75000,
+      "pcReference": null
+    },
+    {
+      "name": "10.73 - South Fa\u00e7ade Pre-Fabricated Canopy",
+      "amount": 35000,
+      "used": 35000,
+      "balance": 0,
+      "pcReference": "PC004"
+    },
+    {
+      "name": "31.00 - Contaminated Soils Haul Off ($53/CY)",
+      "amount": 700000,
+      "used": 700000,
+      "balance": 0,
+      "pcReference": "PC002; PC003;PC004; PC006; PC016"
+    },
+    {
+      "name": "32.14 - Flamed Granite Pavers in Parking Garage",
+      "amount": 75000,
+      "used": 20682,
+      "balance": 54318,
+      "pcReference": "PC034"
+    },
+    {
+      "name": "01.54 - Offsite Parking Allowance",
+      "amount": 100000,
+      "used": 0,
+      "balance": 100000,
+      "pcReference": null
+    }
+  ],
+  "commitments": [
+    {
+      "vendor": "THE BECK GROUP",
+      "contract": "General Construction GMP",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 72756301,
+      "changeOrderAmount": 2365549,
+      "totalContract": 75121850,
+      "pendingCos": null,
+      "invoiced": 49038903.23,
+      "remaining": 26082946.770000003
+    },
+    {
+      "vendor": "CA PARTNERS INC",
+      "contract": "CA Partners - Dev Monitoring",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 30000,
+      "changeOrderAmount": null,
+      "totalContract": 30000,
+      "pendingCos": null,
+      "invoiced": 19000,
+      "remaining": 11000
+    },
+    {
+      "vendor": "CITY OF FORT WORTH",
+      "contract": "Monthly Water Discharge",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 156000,
+      "changeOrderAmount": null,
+      "totalContract": 156000,
+      "pendingCos": null,
+      "invoiced": 58078.72,
+      "remaining": 97921.28
+    },
+    {
+      "vendor": "CRESCENT PROPERTY SERVICES LLC",
+      "contract": "CPS Dev Fee",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 3781800.19,
+      "changeOrderAmount": null,
+      "totalContract": 3781800.19,
+      "pendingCos": null,
+      "invoiced": 2552715,
+      "remaining": 1229085.19
+    },
+    {
+      "vendor": "DUNAWAY ASSOCATES LP",
+      "contract": "B001248.018 CD Office C",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 2958,
+      "changeOrderAmount": 3570,
+      "totalContract": 6528,
+      "pendingCos": null,
+      "invoiced": 4998,
+      "remaining": 1530
+    },
+    {
+      "vendor": "ECS SOUTHEAST LLP",
+      "contract": "Material Testing & Observation",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 169350,
+      "changeOrderAmount": 29620,
+      "totalContract": 198970,
+      "pendingCos": null,
+      "invoiced": 188912.03,
+      "remaining": 10057.970000000001
+    },
+    {
+      "vendor": "GFF INC",
+      "contract": "22214.00 Cultural District Off",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 950800,
+      "changeOrderAmount": 1895243.61,
+      "totalContract": 2846043.61,
+      "pendingCos": null,
+      "invoiced": 2477637.42,
+      "remaining": 368406.18999999994
+    },
+    {
+      "vendor": "METRO CODE, LLC",
+      "contract": "Permit Expeditor",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 37489.8,
+      "changeOrderAmount": 5528.08,
+      "totalContract": 43017.88,
+      "pendingCos": null,
+      "invoiced": 43010.88,
+      "remaining": 7
+    },
+    {
+      "vendor": "OXBLUE LLC",
+      "contract": "Monthly Const Site Camera",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 14376,
+      "changeOrderAmount": null,
+      "totalContract": 14376,
+      "pendingCos": null,
+      "invoiced": 7730,
+      "remaining": 6646
+    },
+    {
+      "vendor": "RUNYON FINE ARTS, INC.",
+      "contract": "Art Consulting",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 30000,
+      "changeOrderAmount": null,
+      "totalContract": 30000,
+      "pendingCos": null,
+      "invoiced": 7500,
+      "remaining": 22500
+    },
+    {
+      "vendor": "TERRACON CONSULTANTS INC",
+      "contract": "Terracon Proposal # P95227227",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 2600,
+      "changeOrderAmount": null,
+      "totalContract": 2600,
+      "pendingCos": null,
+      "invoiced": 2600,
+      "remaining": 0
+    },
+    {
+      "vendor": "TERRACON CONSULTANTS INC",
+      "contract": "Boland & W 7th Street",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 8085,
+      "changeOrderAmount": null,
+      "totalContract": 8085,
+      "pendingCos": null,
+      "invoiced": 2896,
+      "remaining": 5189
+    },
+    {
+      "vendor": "TERRACON CONSULTANTS INC",
+      "contract": "Terracon Prop No. P95237467",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 29500,
+      "changeOrderAmount": 46850,
+      "totalContract": 76350,
+      "pendingCos": null,
+      "invoiced": 68900,
+      "remaining": 7450
+    },
+    {
+      "vendor": "TRI DAL UTILITIES LTD",
+      "contract": "Job # 240383-1",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 92349,
+      "changeOrderAmount": null,
+      "totalContract": 92349,
+      "pendingCos": null,
+      "invoiced": 92349,
+      "remaining": 0
+    },
+    {
+      "vendor": "WESTWOOD PROFESSIONAL SERVICES INC",
+      "contract": "Parcel C Survey &",
+      "startDate": null,
+      "endDate": null,
+      "status": "Approved",
+      "originalContract": 137830,
+      "changeOrderAmount": 119497.22,
+      "totalContract": 257327.22,
+      "pendingCos": null,
+      "invoiced": 256772.55,
+      "remaining": 554.6700000000128
+    }
+  ],
+  "milestones": [
+    {
+      "seq": 1,
+      "description": "NTP",
+      "baseDate": "2025-02-24",
+      "contractDate": "2025-02-24",
+      "currentDate": "2025-02-24",
+      "varianceDays": 0
+    },
+    {
+      "seq": 2,
+      "description": "Foundation Start",
+      "baseDate": "2025-06-02",
+      "contractDate": "2025-06-02",
+      "currentDate": "2025-06-02",
+      "varianceDays": 0
+    },
+    {
+      "seq": 3,
+      "description": "Start Elevated Slab",
+      "baseDate": "2025-11-12",
+      "contractDate": "2025-11-12",
+      "currentDate": "2025-11-11",
+      "varianceDays": -1
+    },
+    {
+      "seq": 4,
+      "description": "Building Top-out",
+      "baseDate": "2026-04-21",
+      "contractDate": "2026-04-21",
+      "currentDate": "2026-04-25",
+      "varianceDays": 4
+    },
+    {
+      "seq": 5,
+      "description": "Final Inspections (TCO)",
+      "baseDate": "2027-03-14",
+      "contractDate": "2027-03-14",
+      "currentDate": "2027-03-15",
+      "varianceDays": 1
+    },
+    {
+      "seq": 6,
+      "description": "Start TI",
+      "baseDate": "2027-03-14",
+      "contractDate": "2027-03-14",
+      "currentDate": "2027-03-14",
+      "varianceDays": 0
+    },
+    {
+      "seq": 7,
+      "description": "Substantial Completion",
+      "baseDate": "2027-05-03",
+      "contractDate": "2027-05-03",
+      "currentDate": "2027-05-03",
+      "varianceDays": 0
+    },
+    {
+      "seq": 8,
+      "description": "Final Completion",
+      "baseDate": "2027-06-02",
+      "contractDate": "2027-06-02",
+      "currentDate": "2027-06-02",
+      "varianceDays": 0
+    }
+  ],
+  "designIssuances": [
+    {
+      "description": "PR12 - Gates@ Alley / Turnstiles",
+      "receivedDate": "2025-08-20"
+    },
+    {
+      "description": "PR15 - Multiple Changes",
+      "receivedDate": "2025-12-26"
+    },
+    {
+      "description": "PR16 - JPM Revisions",
+      "receivedDate": "2026-01-09"
+    },
+    {
+      "description": "PR17 - Doorhardware",
+      "receivedDate": "2026-01-21"
+    },
+    {
+      "description": "PR - 18 - TBD",
+      "receivedDate": null
+    },
+    {
+      "description": "PR19 - Slab opening fill",
+      "receivedDate": null
+    }
+  ],
+  "lookahead": [
+    "Level 2 Glazing",
+    "Permanent Power",
+    "Level 3 Glazing"
+  ],
+  "weather": {
+    "contractDays": 35,
+    "usedThisPeriod": 0,
+    "totalUsed": 11,
+    "balance": 24
+  },
+  "submittals": {
+    "submittedToDate": 397,
+    "returnedOrVoided": 380,
+    "outstanding": 17
+  },
+  "weeklyStatus": [
+    {
+      "week": "W1",
+      "onTrack": 5,
+      "needsAttention": 4,
+      "blocked": 3,
+      "done": 1
+    },
+    {
+      "week": "W2",
+      "onTrack": 6,
+      "needsAttention": 4,
+      "blocked": 2,
+      "done": 1
+    },
+    {
+      "week": "W3",
+      "onTrack": 8,
+      "needsAttention": 3,
+      "blocked": 2,
+      "done": 1
+    },
+    {
+      "week": "W4",
+      "onTrack": 9,
+      "needsAttention": 5,
+      "blocked": 3,
+      "done": 1
+    },
+    {
+      "week": "W5",
+      "onTrack": 11,
+      "needsAttention": 7,
+      "blocked": 4,
+      "done": 2
+    },
+    {
+      "week": "W6",
+      "onTrack": 13,
+      "needsAttention": 8,
+      "blocked": 4,
+      "done": 2
+    }
+  ]
+}
