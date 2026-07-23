@@ -68,6 +68,30 @@ model Project {
   designIssuances DesignIssuance[]
   lookahead       LookaheadItem[]
   weeklyStatus    WeeklyStatus[]
+  attachments     Attachment[]
+}
+
+// Uploaded documents. Stored in the database (bytea) so the app needs no
+// external object store; capped at a few MB per file at the API layer.
+// Linked to a Task or Allowance, or neither (project-level PCO documents).
+model Attachment {
+  id          String     @id @default(cuid())
+  projectId   String
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId      String?
+  task        Task?      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  allowanceId String?
+  allowance   Allowance? @relation(fields: [allowanceId], references: [id], onDelete: Cascade)
+  filename    String
+  contentType String
+  size        Int
+  data        Bytes
+  uploadedBy  String?
+  createdAt   DateTime   @default(now())
+
+  @@index([projectId])
+  @@index([taskId])
+  @@index([allowanceId])
 }
 
 // ---- Tasks ----------------------------------------------------------------
@@ -86,6 +110,8 @@ model Task {
   topIssue   Boolean   @default(false)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+
+  attachments Attachment[]
 
   @@index([projectId])
 }
@@ -203,6 +229,8 @@ model Allowance {
   used        Float
   balance     Float
   pcReference String?
+
+  attachments Attachment[]
 
   @@index([projectId])
 }

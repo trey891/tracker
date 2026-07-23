@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export function StatCard({
   label,
   value,
@@ -5,6 +7,7 @@ export function StatCard({
   tone = "neutral",
   spark,
   icon,
+  href,
 }: {
   label: string;
   value: string;
@@ -12,6 +15,7 @@ export function StatCard({
   tone?: "neutral" | "ontrack" | "attention" | "blocked" | "brand";
   spark?: number[];
   icon?: React.ReactNode;
+  href?: string;
 }) {
   const ring = {
     neutral: "border-line",
@@ -28,8 +32,8 @@ export function StatCard({
     brand: "#7c5cff",
   }[tone];
 
-  return (
-    <div className={`card card-pad border ${ring}`}>
+  const inner = (
+    <>
       <div className="flex items-center justify-between">
         <span className="eyebrow flex items-center gap-2">
           {icon}
@@ -43,8 +47,18 @@ export function StatCard({
           {delta.up ? "↗" : "↘"} {delta.text}
         </div>
       )}
-    </div>
+      {href && <div className="mt-2 text-[11px] text-brand-soft opacity-0 transition group-hover:opacity-100">View →</div>}
+    </>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className={`card card-pad group block border ${ring} transition hover:border-brand/50 hover:bg-panel-2/40`}>
+        {inner}
+      </Link>
+    );
+  }
+  return <div className={`card card-pad border ${ring}`}>{inner}</div>;
 }
 
 export function Sparkline({ data, color = "#7c5cff", w = 88, h = 30 }: { data: number[]; color?: string; w?: number; h?: number }) {

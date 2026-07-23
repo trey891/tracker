@@ -5,6 +5,7 @@ import { Topbar } from "@/components/Topbar";
 import { NoProject } from "@/components/EmptyState";
 import { Donut } from "@/components/Charts";
 import { AddAllowanceButton, AllowanceActions } from "@/components/PcoEditors";
+import { AttachmentManager, type AttachmentMeta } from "@/components/AttachmentManager";
 import { money, pct } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -28,13 +29,23 @@ export default async function PcoLogPage() {
     );
   }
 
-  const [summary, buckets, reasons, funding, allowances] = await Promise.all([
+  const [summary, buckets, reasons, funding, allowances, pcoDocs] = await Promise.all([
     prisma.pcoSummary.findUnique({ where: { projectId: project.id } }),
     prisma.pcoStatusBucket.findMany({ where: { projectId: project.id } }),
     prisma.pcoReason.findMany({ where: { projectId: project.id }, orderBy: { value: "desc" } }),
     prisma.pcoFundingSource.findMany({ where: { projectId: project.id }, orderBy: { value: "desc" } }),
-    prisma.allowance.findMany({ where: { projectId: project.id }, orderBy: { amount: "desc" } }),
+    prisma.allowance.findMany({
+      where: { projectId: project.id },
+      orderBy: { amount: "desc" },
+      include: { _count: { select: { attachments: true } } },
+    }),
+    prisma.attachment.findMany({
+      where: { projectId: project.id, taskId: null, allowanceId: null },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, filename: true, size: true, contentType: true, uploadedBy: true, createdAt: true },
+    }),
   ]);
+  const pcoDocsInitial: AttachmentMeta[] = pcoDocs.map((d) => ({ ...d, createdAt: d.createdAt.toISOString() }));
 
   const order = ["Approved", "Pending", "ROM", "Voided"];
   const sortedBuckets = [...buckets].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
@@ -159,7 +170,12 @@ export default async function PcoLogPage() {
             <tbody>
               {allowances.map((a) => (
                 <tr key={a.id} className="border-b border-line/50 hover:bg-panel-2/40">
-                  <td className="px-5 py-3 font-medium text-white">{a.name}</td>
+                  <td className="px-5 py-3 font-medium text-white">
+                    {a.name}
+                    {a._count.attachments > 0 && (
+                      <span title={`${a._count.attachments} document(s)`} className="ml-2 text-[11px] text-slate-500">📎 {a._count.attachments}</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-right text-slate-300">{money(a.amount)}</td>
                   <td className="px-4 py-3 text-right text-slate-400">{money(a.used)}</td>
                   <td className={`px-4 py-3 text-right font-medium ${a.balance > 0 ? "text-status-ontrack" : "text-slate-500"}`}>{money(a.balance)}</td>
@@ -170,6 +186,16 @@ export default async function PcoLogPage() {
             </tbody>
           </table>
         </div>
+      </section>
+
+      {/* Project-level PCO documents */}
+      <section className="card card-pad mt-4">
+        <span className="eyebrow">Documents</span>
+        <h2 className="mb-4 mt-1 text-lg font-semibold text-white">PCO documents</h2>
+        <p className="mb-3 text-xs text-slate-500">
+          Attach PCO logs, change-order backup, quotes, or approvals here. To attach files to a specific allowance line, use its Edit button above.
+        </p>
+        <AttachmentManager projectLevel initial={pcoDocsInitial} />
       </section>
     </>
   );

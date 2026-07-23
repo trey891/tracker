@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { getPrimaryProjectId, getTasks } from "@/lib/data";
+import { getPrimaryProjectId } from "@/lib/data";
 import { Topbar } from "@/components/Topbar";
 import { TaskManager, type TaskDTO } from "@/components/TaskManager";
 import { NoProject } from "@/components/EmptyState";
@@ -15,7 +15,7 @@ function toDateInput(d: Date | null): string | null {
 export default async function TasksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ new?: string; status?: string }>;
+  searchParams: Promise<{ new?: string; status?: string; workstream?: string; q?: string }>;
 }) {
   const session = await auth();
   const sp = await searchParams;
@@ -31,7 +31,11 @@ export default async function TasksPage({
   }
 
   const [tasks, team] = await Promise.all([
-    getTasks(projectId),
+    prisma.task.findMany({
+      where: { projectId },
+      orderBy: [{ topIssue: "desc" }, { updatedAt: "desc" }],
+      include: { _count: { select: { attachments: true } } },
+    }),
     prisma.user.findMany({ orderBy: { name: "asc" }, select: { initials: true, name: true } }),
   ]);
 
@@ -46,12 +50,20 @@ export default async function TasksPage({
     note: t.note,
     blocker: t.blocker,
     topIssue: t.topIssue,
+    attachmentCount: t._count.attachments,
   }));
 
   return (
     <>
       <Topbar title="Tasks" subtitle="Every workstream, one list" user={session?.user ?? {}} />
-      <TaskManager tasks={dtos} team={team} initialStatus={sp.status} openNew={sp.new === "1"} />
+      <TaskManager
+        tasks={dtos}
+        team={team}
+        initialStatus={sp.status}
+        initialWorkstream={sp.workstream}
+        initialQuery={sp.q}
+        openNew={sp.new === "1"}
+      />
     </>
   );
 }

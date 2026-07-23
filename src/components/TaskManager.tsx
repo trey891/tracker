@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { STATUSES, PRIORITIES, WORKSTREAMS } from "@/lib/constants";
 import { StatusBadge, PriorityBadge } from "./Badges";
+import { AttachmentManager } from "./AttachmentManager";
 import { createTask, updateTask, deleteTask } from "@/app/(app)/tasks/actions";
 
 export type TaskDTO = {
@@ -17,6 +18,7 @@ export type TaskDTO = {
   note: string | null;
   blocker: string | null;
   topIssue: boolean;
+  attachmentCount: number;
 };
 
 type TeamMember = { initials: string; name: string };
@@ -25,17 +27,21 @@ export function TaskManager({
   tasks,
   team,
   initialStatus,
+  initialWorkstream,
+  initialQuery,
   openNew,
 }: {
   tasks: TaskDTO[];
   team: TeamMember[];
   initialStatus?: string;
+  initialWorkstream?: string;
+  initialQuery?: string;
   openNew?: boolean;
 }) {
   const router = useRouter();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery ?? "");
   const [status, setStatus] = useState<string>(initialStatus ?? "All");
-  const [workstream, setWorkstream] = useState<string>("All");
+  const [workstream, setWorkstream] = useState<string>(initialWorkstream ?? "All");
   const [editing, setEditing] = useState<TaskDTO | null>(null);
   const [creating, setCreating] = useState<boolean>(!!openNew);
   const [busy, setBusy] = useState(false);
@@ -111,6 +117,11 @@ export function TaskManager({
                     <div className="flex items-center gap-2">
                       {t.topIssue && <span title="Top issue" className="text-brand-soft">★</span>}
                       <span className="font-medium text-white">{t.title}</span>
+                      {t.attachmentCount > 0 && (
+                        <span title={`${t.attachmentCount} document(s)`} className="inline-flex items-center gap-0.5 text-[11px] text-slate-500">
+                          📎 {t.attachmentCount}
+                        </span>
+                      )}
                     </div>
                     {t.blocker && <div className="mt-0.5 text-xs text-status-blocked">⚠ {t.blocker}</div>}
                   </td>
@@ -187,12 +198,12 @@ function TaskModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="card w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+      <div className="card max-h-[85vh] w-full max-w-lg overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-panel px-5 py-4">
           <h3 className="text-base font-semibold text-white">{isEdit ? "Edit task" : "New task"}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
         </div>
-        <form action={handle} className="max-h-[70vh] space-y-4 overflow-y-auto p-5">
+        <form action={handle} className="space-y-4 p-5">
           {isEdit && <input type="hidden" name="id" defaultValue={task!.id} />}
           <div>
             <label className="label">Title</label>
@@ -262,6 +273,16 @@ function TaskModal({
             </button>
           </div>
         </form>
+
+        {isEdit ? (
+          <div className="border-t border-line p-5 pt-4">
+            <AttachmentManager taskId={task!.id} />
+          </div>
+        ) : (
+          <p className="border-t border-line px-5 py-3 text-xs text-slate-500">
+            Save the task first, then reopen it to attach documents.
+          </p>
+        )}
       </div>
     </div>
   );

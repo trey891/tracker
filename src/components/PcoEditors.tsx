@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { upsertAllowance, deleteAllowance } from "@/app/(app)/pco-log/actions";
+import { AttachmentManager } from "./AttachmentManager";
 
 export type AllowanceDTO = {
   id: string;
@@ -54,8 +55,8 @@ function AllowanceModal({ allowance, onClose }: { allowance?: AllowanceDTO; onCl
   const a = allowance;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
-      <div className="card w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b border-line px-5 py-4">
+      <div className="card max-h-[85vh] w-full max-w-md overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-panel px-5 py-4">
           <h3 className="text-base font-semibold text-white">{a ? "Edit allowance" : "Add allowance"}</h3>
           <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
         </div>
@@ -100,6 +101,11 @@ function AllowanceModal({ allowance, onClose }: { allowance?: AllowanceDTO; onCl
             <button type="submit" disabled={saving} className="btn-primary">{saving ? "Saving…" : "Save"}</button>
           </div>
         </form>
+        {a && (
+          <div className="border-t border-line px-5 py-4">
+            <AttachmentManager allowanceId={a.id} />
+          </div>
+        )}
       </div>
     </div>
   );
