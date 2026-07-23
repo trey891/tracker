@@ -12,6 +12,7 @@ import {
   FUNDING_BADGE,
 } from "@/lib/constants";
 import { createPco, updatePco, deletePco } from "@/app/(app)/pco-log/actions";
+import { MultiSelectFilter } from "./MultiSelectFilter";
 
 export type PcoDTO = {
   id: string;
@@ -32,18 +33,18 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
   const router = useRouter();
   const [rows, setRows] = useState<PcoDTO[]>(pcos);
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState("All");
-  const [funding, setFunding] = useState("All");
-  const [reason, setReason] = useState("All");
+  const [status, setStatus] = useState<string[]>([...PCO_STATUSES]);
+  const [funding, setFunding] = useState<string[]>([...CRE_FUNDING]);
+  const [reason, setReason] = useState<string[]>([...PCO_REASONS]);
   const [busy, setBusy] = useState(false);
 
   // keep local rows in sync if the server sends new props after refresh
   useMemo(() => setRows(pcos), [pcos]);
 
   const filtered = rows.filter((p) => {
-    if (status !== "All" && p.status !== status) return false;
-    if (funding !== "All" && p.creFunding !== funding) return false;
-    if (reason !== "All" && p.reason !== reason) return false;
+    if (!status.includes(p.status)) return false;
+    if (!funding.includes(p.creFunding)) return false;
+    if (!reason.includes(p.reason)) return false;
     if (q && !`${p.number ?? ""} ${p.scope} ${p.notes ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
@@ -80,9 +81,9 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
       {/* Toolbar */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search PCO #, scope, notes…" className="input max-w-xs" />
-        <Filter value={status} onChange={setStatus} options={["All", ...PCO_STATUSES]} label="statuses" />
-        <Filter value={funding} onChange={setFunding} options={["All", ...CRE_FUNDING]} label="funding sources" />
-        <Filter value={reason} onChange={setReason} options={["All", ...PCO_REASONS]} label="reasons" />
+        <MultiSelectFilter label="Status" options={PCO_STATUSES} selected={status} onChange={setStatus} />
+        <MultiSelectFilter label="Funding" options={CRE_FUNDING} selected={funding} onChange={setFunding} />
+        <MultiSelectFilter label="Reason" options={PCO_REASONS} selected={reason} onChange={setReason} />
         <div className="ml-auto flex items-center gap-3">
           <span className="text-xs text-slate-500">
             {filtered.length} of {rows.length} PCOs
@@ -168,18 +169,6 @@ export function PcoLogTable({ pcos }: { pcos: PcoDTO[] }) {
       </div>
       <p className="mt-2 text-xs text-slate-500">Click any cell to edit. Changes save automatically.</p>
     </div>
-  );
-}
-
-function Filter({ value, onChange, options, label }: { value: string; onChange: (v: string) => void; options: readonly string[]; label: string }) {
-  return (
-    <select value={value} onChange={(e) => onChange(e.target.value)} className="input max-w-[190px]">
-      {options.map((o) => (
-        <option key={o} value={o}>
-          {o === "All" ? `All ${label}` : o}
-        </option>
-      ))}
-    </select>
   );
 }
 

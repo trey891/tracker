@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { STATUSES, PRIORITIES, WORKSTREAMS } from "@/lib/constants";
 import { StatusBadge, PriorityBadge } from "./Badges";
 import { AttachmentManager } from "./AttachmentManager";
+import { MultiSelectFilter } from "./MultiSelectFilter";
 import { createTask, updateTask, deleteTask } from "@/app/(app)/tasks/actions";
 
 export type TaskDTO = {
@@ -40,20 +41,26 @@ export function TaskManager({
 }) {
   const router = useRouter();
   const [q, setQ] = useState(initialQuery ?? "");
-  const [status, setStatus] = useState<string>(initialStatus ?? "All");
-  const [workstream, setWorkstream] = useState<string>(initialWorkstream ?? "All");
+  const [status, setStatus] = useState<string[]>(
+    initialStatus && (STATUSES as readonly string[]).includes(initialStatus) ? [initialStatus] : [...STATUSES],
+  );
+  const [workstream, setWorkstream] = useState<string[]>(
+    initialWorkstream && (WORKSTREAMS as readonly string[]).includes(initialWorkstream) ? [initialWorkstream] : [...WORKSTREAMS],
+  );
+  const [priority, setPriority] = useState<string[]>([...PRIORITIES]);
   const [editing, setEditing] = useState<TaskDTO | null>(null);
   const [creating, setCreating] = useState<boolean>(!!openNew);
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
-      if (status !== "All" && t.status !== status) return false;
-      if (workstream !== "All" && t.workstream !== workstream) return false;
+      if (!status.includes(t.status)) return false;
+      if (!workstream.includes(t.workstream)) return false;
+      if (!priority.includes(t.priority)) return false;
       if (q && !`${t.title} ${t.note ?? ""} ${t.lead ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
       return true;
     });
-  }, [tasks, q, status, workstream]);
+  }, [tasks, q, status, workstream, priority]);
 
   async function onDelete(id: string) {
     if (!confirm("Delete this task? This cannot be undone.")) return;
@@ -75,18 +82,9 @@ export function TaskManager({
           placeholder="Search tasks…"
           className="input max-w-xs"
         />
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="input max-w-[180px]">
-          <option>All</option>
-          {STATUSES.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
-        <select value={workstream} onChange={(e) => setWorkstream(e.target.value)} className="input max-w-[200px]">
-          <option>All</option>
-          {WORKSTREAMS.map((w) => (
-            <option key={w}>{w}</option>
-          ))}
-        </select>
+        <MultiSelectFilter label="Status" options={STATUSES} selected={status} onChange={setStatus} />
+        <MultiSelectFilter label="Workstream" options={WORKSTREAMS} selected={workstream} onChange={setWorkstream} />
+        <MultiSelectFilter label="Priority" options={PRIORITIES} selected={priority} onChange={setPriority} />
         <div className="ml-auto flex items-center gap-2">
           <span className="text-sm text-slate-500">{filtered.length} of {tasks.length}</span>
           <button className="btn-primary" onClick={() => setCreating(true)}>
