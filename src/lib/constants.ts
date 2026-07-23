@@ -49,6 +49,52 @@ export const PRIORITY_BADGE: Record<Priority, string> = {
   Low: "text-slate-300 bg-slate-500/10 ring-slate-500/30",
 };
 
+// ---- PCO (Cost Tracking) vocabularies ----
+export const PCO_STATUSES = ["Approved", "Pending", "ROM", "Voided"] as const;
+export const PCO_REASONS = ["Owner Change", "Tenant Request", "Design Error", "Other"] as const;
+export const CRE_FUNDING = [
+  "Owner Allowance",
+  "TI Allowance",
+  "FF&E",
+  "GC Allowance",
+  "Contractor Contingency",
+  "PT&I",
+  "None/Other",
+] as const;
+export const GC_FUNDING = ["CO to Contract", "GC Allowance", "Contractor Contingency", "None"] as const;
+
+export const PCO_STATUS_COLOR: Record<string, string> = {
+  Approved: "#22c55e",
+  Pending: "#f59e0b",
+  ROM: "#38bdf8",
+  Voided: "#94a3b8",
+};
+
+// Subtle ring/badge classes for pill selects on the PCO log.
+export const PCO_STATUS_BADGE: Record<string, string> = {
+  Approved: "text-status-ontrack bg-status-ontrack/10 ring-status-ontrack/30",
+  Pending: "text-status-attention bg-status-attention/10 ring-status-attention/30",
+  ROM: "text-status-done bg-status-done/10 ring-status-done/30",
+  Voided: "text-slate-400 bg-slate-500/10 ring-slate-500/30",
+};
+
+export const REASON_BADGE: Record<string, string> = {
+  "Owner Change": "text-sky-300 bg-sky-500/10 ring-sky-500/30",
+  "Tenant Request": "text-teal-300 bg-teal-500/10 ring-teal-500/30",
+  "Design Error": "text-rose-300 bg-rose-500/10 ring-rose-500/30",
+  Other: "text-slate-300 bg-slate-500/10 ring-slate-500/30",
+};
+
+export const FUNDING_BADGE: Record<string, string> = {
+  "Owner Allowance": "text-violet-300 bg-violet-500/10 ring-violet-500/30",
+  "TI Allowance": "text-amber-300 bg-amber-500/10 ring-amber-500/30",
+  "FF&E": "text-pink-300 bg-pink-500/10 ring-pink-500/30",
+  "GC Allowance": "text-emerald-300 bg-emerald-500/10 ring-emerald-500/30",
+  "Contractor Contingency": "text-indigo-300 bg-indigo-500/10 ring-indigo-500/30",
+  "PT&I": "text-cyan-300 bg-cyan-500/10 ring-cyan-500/30",
+  "None/Other": "text-slate-300 bg-slate-500/10 ring-slate-500/30",
+};
+
 export function isStatus(v: string): v is Status {
   return (STATUSES as readonly string[]).includes(v);
 }

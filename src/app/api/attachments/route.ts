@@ -4,7 +4,8 @@ import { getCurrentProjectId } from "@/lib/project";
 
 export const dynamic = "force-dynamic";
 
-const MAX_BYTES = 4 * 1024 * 1024; // 4 MB — stays under Vercel's serverless body limit
+const MAX_DOC = 4 * 1024 * 1024; // 4 MB for documents
+const MAX_PHOTO = 5 * 1024 * 1024; // 5 MB for progress photos
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -17,12 +18,20 @@ export async function POST(request: Request) {
   const file = form.get("file");
   const taskId = (form.get("taskId") as string) || null;
   const allowanceId = (form.get("allowanceId") as string) || null;
+  const kind = (form.get("kind") as string) === "photo" ? "photo" : "doc";
+  const description = (form.get("description") as string)?.trim() || null;
+  const takenRaw = (form.get("takenDate") as string) || "";
+  const takenDate = takenRaw ? new Date(takenRaw) : null;
 
   if (!(file instanceof File) || file.size === 0) {
     return new Response("No file provided", { status: 400 });
   }
-  if (file.size > MAX_BYTES) {
-    return new Response(`File too large (max ${MAX_BYTES / 1024 / 1024} MB)`, { status: 413 });
+  if (kind === "photo" && !file.type.startsWith("image/")) {
+    return new Response("Only image files are allowed for progress photos", { status: 400 });
+  }
+  const max = kind === "photo" ? MAX_PHOTO : MAX_DOC;
+  if (file.size > max) {
+    return new Response(`File too large (max ${max / 1024 / 1024} MB)`, { status: 413 });
   }
 
   // Verify the target belongs to this project (avoid cross-project writes).
@@ -41,6 +50,9 @@ export async function POST(request: Request) {
       projectId,
       taskId,
       allowanceId,
+      kind,
+      description,
+      takenDate: takenDate && !Number.isNaN(takenDate.getTime()) ? takenDate : null,
       filename: file.name.slice(0, 255),
       contentType: file.type || "application/octet-stream",
       size: bytes.length,

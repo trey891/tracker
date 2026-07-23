@@ -60,7 +60,7 @@ export default async function HardCostPage() {
   return (
     <>
       <Topbar
-        title="Hard Cost"
+        title="Construction Overview"
         subtitle={`${project.name} · #${project.code} · as of ${f?.asOfDate ? shortDate(f.asOfDate) : "—"}`}
         user={session?.user ?? {}}
         action={<EditFinancialsButton initial={finInitial} asOfDate={iso(f?.asOfDate ?? null)} />}

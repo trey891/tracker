@@ -282,6 +282,42 @@ for r in range(27, 40):
             "pcReference": cell(pco, f"O{r}"),
         })
 
+# ---------------------------------------------------- pco line-item log ------
+# The per-PCO log lives below the dashboard on the PCO sheet (header row 51).
+def clean(v):
+    if isinstance(v, str):
+        v = v.strip()
+        return v or None
+    return v
+
+
+pcos = []
+PCO_HEADER = 51
+for r in range(PCO_HEADER + 1, 120):
+    scope = clean(cell(pco, f"B{r}"))
+    number = clean(cell(pco, f"A{r}"))
+    if not scope:
+        continue
+    # skip summary rows that sneak in without a status/value
+    if isinstance(number, str) and number.lower().startswith("original contract"):
+        continue
+    status = clean(cell(pco, f"E{r}")) or "Pending"
+    pcos.append({
+        "number": str(number) if number is not None else None,
+        "scope": scope,
+        "status": status,
+        "value": cell(pco, f"F{r}"),
+        "oco": clean(cell(pco, f"G{r}")),
+        "gcFunding": clean(cell(pco, f"H{r}")),
+        "creFunding": clean(cell(pco, f"I{r}")) or "None/Other",
+        "contractorAllowance": cell(pco, f"J{r}"),
+        "buyout": cell(pco, f"K{r}"),
+        "contractorContingency": cell(pco, f"L{r}"),
+        "recoupableCosts": cell(pco, f"M{r}"),
+        "reason": clean(cell(pco, f"N{r}")) or "Other",
+        "notes": clean(cell(pco, f"O{r}")),
+    })
+
 # ------------------------------------------------------------ commitments ----
 commitments = []
 for r in range(4, 19):
@@ -370,6 +406,7 @@ data = {
     "pcoSummary": pco_summary,
     "pcoReasons": pco_reasons,
     "pcoFunding": pco_funding,
+    "pcos": pcos,
     "allowances": allowances,
     "commitments": commitments,
     "milestones": milestones,
@@ -384,6 +421,6 @@ with open(OUT, "w") as f:
     json.dump(data, f, indent=2, default=str)
 
 print(f"Wrote {OUT}")
-print(f"  tasks={len(tasks)} commitments={len(commitments)} "
+print(f"  tasks={len(tasks)} pcos={len(pcos)} commitments={len(commitments)} "
       f"allowances={len(allowances)} milestones={len(milestones)}")
 print(f"  W6 counts={c6}")

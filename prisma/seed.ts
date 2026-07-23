@@ -193,7 +193,26 @@ async function main() {
       pcReference: a.pcReference ?? null,
     })),
   });
-  console.log(`✓ PCO summary, ${data.allowances.length} allowances`);
+  await prisma.pco.createMany({
+    data: (data.pcos as Json[]).map((p, i) => ({
+      projectId,
+      orderIndex: i,
+      number: p.number ?? null,
+      scope: p.scope,
+      status: p.status ?? "Pending",
+      value: p.value ?? null,
+      oco: p.oco != null ? String(p.oco) : null,
+      gcFunding: p.gcFunding ?? null,
+      creFunding: p.creFunding ?? "None/Other",
+      contractorAllowance: p.contractorAllowance ?? null,
+      buyout: p.buyout ?? null,
+      contractorContingency: p.contractorContingency ?? null,
+      recoupableCosts: p.recoupableCosts ?? null,
+      reason: p.reason ?? "Other",
+      notes: p.notes ?? null,
+    })),
+  });
+  console.log(`✓ PCO summary, ${data.allowances.length} allowances, ${(data.pcos as Json[]).length} PCO line items`);
 
   // --- Commitments ---
   await prisma.commitment.createMany({

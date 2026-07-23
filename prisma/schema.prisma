@@ -62,6 +62,7 @@ model Project {
   pcoBuckets      PcoStatusBucket[]
   pcoReasons      PcoReason[]
   pcoFunding      PcoFundingSource[]
+  pcos            Pco[]
   allowances      Allowance[]
   commitments     Commitment[]
   milestones      Milestone[]
@@ -87,11 +88,15 @@ model Attachment {
   size        Int
   data        Bytes
   uploadedBy  String?
+  kind        String     @default("doc") // "doc" | "photo"
+  description String?
+  takenDate   DateTime? // for progress photos
   createdAt   DateTime   @default(now())
 
   @@index([projectId])
   @@index([taskId])
   @@index([allowanceId])
+  @@index([kind])
 }
 
 // ---- Tasks ----------------------------------------------------------------
@@ -216,6 +221,31 @@ model PcoFundingSource {
   count       Int
   value       Float
   pctOfFunded Float?
+
+  @@index([projectId])
+}
+
+// Individual potential change orders — the editable PCO log.
+model Pco {
+  id                    String   @id @default(cuid())
+  projectId             String
+  project               Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  number                String?
+  scope                 String
+  status                String   @default("Pending") // Approved | Pending | ROM | Voided
+  value                 Float?
+  oco                   String?
+  gcFunding             String? // CO to Contract | GC Allowance | Contractor Contingency
+  creFunding            String   @default("None/Other")
+  contractorAllowance   Float?
+  buyout                Float?
+  contractorContingency Float?
+  recoupableCosts       Float?
+  reason                String   @default("Other") // Owner Change | Tenant Request | Design Error | Other
+  notes                 String?
+  orderIndex            Int      @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@index([projectId])
 }

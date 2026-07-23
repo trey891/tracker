@@ -58,3 +58,58 @@ export async function updateBucket(formData: FormData) {
   });
   refresh();
 }
+
+// ---- PCO line items (Cost Tracking log) ----
+function numOrNull(v: FormDataEntryValue | null): number | null {
+  const raw = String(v ?? "").trim().replace(/[$,]/g, "");
+  if (raw === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+type PcoPatch = {
+  number?: string | null;
+  scope?: string;
+  status?: string;
+  value?: number | null;
+  oco?: string | null;
+  gcFunding?: string | null;
+  creFunding?: string;
+  contractorAllowance?: number | null;
+  buyout?: number | null;
+  contractorContingency?: number | null;
+  recoupableCosts?: number | null;
+  reason?: string;
+  notes?: string | null;
+};
+
+export async function createPco() {
+  await requireSession();
+  const projectId = await getCurrentProjectId();
+  if (!projectId) throw new Error("No project");
+  const last = await prisma.pco.findFirst({ where: { projectId }, orderBy: { orderIndex: "desc" } });
+  const created = await prisma.pco.create({
+    data: { projectId, orderIndex: (last?.orderIndex ?? -1) + 1, scope: "New PCO", status: "Pending", reason: "Other", creFunding: "None/Other" },
+  });
+  refresh();
+  return created.id;
+}
+
+// Partial update of a single PCO — used by inline cell edits and the edit modal.
+export async function updatePco(id: string, patch: PcoPatch) {
+  await requireSession();
+  const projectId = await getCurrentProjectId();
+  if (!projectId) throw new Error("No project");
+  const existing = await prisma.pco.findFirst({ where: { id, projectId }, select: { id: true } });
+  if (!existing) throw new Error("Not found");
+  await prisma.pco.update({ where: { id }, data: patch });
+  refresh();
+}
+
+export async function deletePco(id: string) {
+  await requireSession();
+  const projectId = await getCurrentProjectId();
+  if (!projectId) throw new Error("No project");
+  await prisma.pco.deleteMany({ where: { id, projectId } });
+  refresh();
+}

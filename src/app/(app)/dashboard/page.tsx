@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   if (!project) {
     return (
       <>
-        <Topbar title="Dashboard" subtitle="At-a-glance health across every workstream" user={session?.user ?? {}} />
+        <Topbar title="Project Dashboard" subtitle="At-a-glance health across every workstream" user={session?.user ?? {}} />
         <NoProject />
       </>
     );
@@ -58,8 +58,8 @@ export default async function DashboardPage() {
   return (
     <>
       <Topbar
-        title="Dashboard"
-        subtitle="At-a-glance health across every workstream"
+        title="Project Dashboard"
+        subtitle={`${project.name} — at-a-glance health across every workstream`}
         user={session?.user ?? {}}
         action={<DashboardActions />}
       />
