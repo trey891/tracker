@@ -35,3 +35,24 @@ export async function listAttachments(where: { taskId?: string; allowanceId?: st
     select: { id: true, filename: true, size: true, contentType: true, uploadedBy: true, createdAt: true },
   });
 }
+
+// Progress photos for the current project (newest first) — used by the PDF
+// report's photo picker.
+export async function listPhotos() {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+  const projectId = await getCurrentProjectId();
+  if (!projectId) return [];
+  const rows = await prisma.attachment.findMany({
+    where: { projectId, kind: "photo" },
+    orderBy: [{ takenDate: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+    select: { id: true, filename: true, description: true, takenDate: true, createdAt: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    filename: r.filename,
+    description: r.description,
+    takenDate: r.takenDate ? r.takenDate.toISOString().slice(0, 10) : null,
+    createdAt: r.createdAt.toISOString(),
+  }));
+}

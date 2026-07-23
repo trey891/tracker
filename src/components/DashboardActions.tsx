@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { publishWeeklySnapshot } from "@/app/(app)/dashboard/actions";
+import { PublishPdfButton } from "./PublishPdfButton";
 
 export function DashboardActions() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export function DashboardActions() {
 
   return (
     <div className="flex items-center gap-2">
+      <PublishPdfButton />
       <a href="/api/export/xlsx" className="btn-ghost">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />

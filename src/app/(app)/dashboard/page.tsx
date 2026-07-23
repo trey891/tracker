@@ -13,6 +13,7 @@ import { StackedStatusChart, Donut } from "@/components/Charts";
 import { StatusBadge, PriorityBadge, WorkstreamTag } from "@/components/Badges";
 import { NoProject } from "@/components/EmptyState";
 import { DashboardActions } from "@/components/DashboardActions";
+import { GanttSchedule } from "@/components/GanttSchedule";
 import { money, pct, dueLabel } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -29,12 +30,18 @@ export default async function DashboardPage() {
     );
   }
 
-  const [fin, tasks, weekly, teamCount] = await Promise.all([
+  const [fin, tasks, weekly, teamCount, milestones] = await Promise.all([
     getLatestFinancials(project.id),
     getTasks(project.id),
     prisma.weeklyStatus.findMany({ where: { projectId: project.id }, orderBy: { orderIndex: "asc" } }),
     prisma.user.count(),
+    prisma.milestone.findMany({ where: { projectId: project.id }, orderBy: { seq: "asc" } }),
   ]);
+  const ganttMilestones = milestones.map((m) => ({
+    description: m.description,
+    baseDate: m.baseDate ? m.baseDate.toISOString() : null,
+    currentDate: m.currentDate ? m.currentDate.toISOString() : null,
+  }));
 
   const counts = statusCounts(tasks);
   const total = tasks.length;
@@ -68,6 +75,20 @@ export default async function DashboardPage() {
         <span className="font-semibold text-slate-200">{teamCount} teammates</span> · {total} tasks this cycle ·{" "}
         <span className="text-slate-300">{project.name}</span>
       </p>
+
+      {/* Schedule Gantt */}
+      <section className="card card-pad mb-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <span className="eyebrow">Schedule</span>
+            <h2 className="mt-1 text-lg font-semibold text-white">Milestone timeline</h2>
+          </div>
+          <Link href="/hard-cost" className="text-sm text-brand-soft hover:underline">
+            Full schedule →
+          </Link>
+        </div>
+        <GanttSchedule milestones={ganttMilestones} />
+      </section>
 
       {/* KPI cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
