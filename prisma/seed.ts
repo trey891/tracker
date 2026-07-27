@@ -57,6 +57,7 @@ async function backfill(data: Json) {
   }
 
   await backfillLineItems();
+  await backfillRollupRows();
 }
 
 // Default rows for the per-project "Hard Cost Budget → Forecast" summary,
@@ -96,6 +97,43 @@ async function backfillLineItems() {
       })),
     });
     console.log(`  backfilled ${LINE_ITEM_TEMPLATE.length} financial line items for project ${p.id}`);
+  }
+}
+
+// The 5 protected roll-up rows every project must have. Existing seeded rows are
+// matched by their known label and upgraded (tagged + standardized); missing
+// ones are created from the latest snapshot value.
+const ROLLUP_ROWS: { key: string; label: string; matchLabels: string[] }[] = [
+  { key: "currentBudget", label: "Current Budget", matchLabels: ["Current Budget (D)", "Current Budget"] },
+  { key: "costsToDate", label: "Costs to Date", matchLabels: ["Costs to Date (J)", "Costs to Date"] },
+  { key: "projectedFinalCost", label: "Projected Final Cost", matchLabels: ["Projected Final Cost (P)", "Projected Final Cost"] },
+  { key: "contingencyBalance", label: "Contingency Balance", matchLabels: ["HC Contingency Balance (R)", "Contingency Balance"] },
+  { key: "overUnderBeforeContingency", label: "Over / (Under) Budget", matchLabels: ["Over / (Under) before Contingency", "Over / (Under) Budget"] },
+];
+
+// Idempotent: guarantees each project has the 5 tagged, protected roll-up rows.
+async function backfillRollupRows() {
+  const projects = await prisma.project.findMany({ select: { id: true } });
+  for (const p of projects) {
+    const fin = await prisma.financialSnapshot.findFirst({ where: { projectId: p.id }, orderBy: { asOfDate: "desc" } });
+    const finRec = fin as Record<string, number | null> | null;
+    for (let i = 0; i < ROLLUP_ROWS.length; i++) {
+      const r = ROLLUP_ROWS[i];
+      const alreadyTagged = await prisma.financialLineItem.findFirst({ where: { projectId: p.id, rollupKey: r.key } });
+      if (alreadyTagged) continue;
+      const match = await prisma.financialLineItem.findFirst({ where: { projectId: p.id, label: { in: r.matchLabels } } });
+      if (match) {
+        await prisma.financialLineItem.update({
+          where: { id: match.id },
+          data: { rollupKey: r.key, label: r.label, emphasis: true, order: i - 100 }, // negative order pins above custom rows
+        });
+      } else {
+        await prisma.financialLineItem.create({
+          data: { projectId: p.id, rollupKey: r.key, label: r.label, section: "Hard Cost Budget → Forecast", value: finRec?.[r.key] ?? null, emphasis: true, order: i - 100 },
+        });
+      }
+    }
+    console.log(`  ensured 5 protected roll-up rows for project ${p.id}`);
   }
 }
 
@@ -356,6 +394,7 @@ async function main() {
   );
 
   await backfillLineItems();
+  await backfillRollupRows();
 
   console.log(`\nDone. Project "${project.name}" seeded.`);
   console.log(`Team login password: "${seedPassword}"  (change after first login)`);

@@ -13,6 +13,9 @@ import {
 type Num = number | null;
 
 // ---------- Financials ----------
+// Note: the 5 roll-up figures (Current Budget, Costs to Date, Projected Final
+// Cost, Contingency Balance, Over/(Under)) are edited only via the protected
+// roll-up rows in the Financial summary, so they are intentionally omitted here.
 const FIN_GROUPS: { title: string; fields: [string, string][] }[] = [
   {
     title: "Budget",
@@ -20,7 +23,6 @@ const FIN_GROUPS: { title: string; fields: [string, string][] }[] = [
       ["originalBudget", "Original Budget (A)"],
       ["approvedChanges", "Approved Changes (B)"],
       ["reallocationsFromTI", "Reallocations from TI (C)"],
-      ["currentBudget", "Current Budget (D)"],
     ],
   },
   {
@@ -28,7 +30,6 @@ const FIN_GROUPS: { title: string; fields: [string, string][] }[] = [
     fields: [
       ["currentCommitments", "Current Commitments (H)"],
       ["uncommittedBudget", "Uncommitted Budget (I)"],
-      ["costsToDate", "Costs to Date (J)"],
       ["unspentCommitments", "Unspent Commitments (K)"],
       ["ffeAllowance", "FF&E Allowance"],
     ],
@@ -37,9 +38,6 @@ const FIN_GROUPS: { title: string; fields: [string, string][] }[] = [
     title: "Forecast & contingency",
     fields: [
       ["pendingCosPcos", "Pending COs & PCOs (M)"],
-      ["projectedFinalCost", "Projected Final Cost (P)"],
-      ["overUnderBeforeContingency", "Over/(Under) before Contingency"],
-      ["contingencyBalance", "HC Contingency Balance (R)"],
       ["trendingContingencyAtCompletion", "Trending Contingency @ Completion (S)"],
       ["contractorContingency", "Contractor Contingency (T)"],
       ["allowances", "Allowances (L)"],

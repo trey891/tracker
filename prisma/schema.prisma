@@ -103,10 +103,15 @@ model FinancialLineItem {
   value     Float?
   emphasis  Boolean  @default(false) // bold subtotal rows (Current Budget, Projected Final…)
   order     Int      @default(0)
+  // When set, this row is one of the fixed roll-up figures the Development
+  // Dashboard aggregates. Such rows are protected (no delete/reorder/rename) and
+  // their value writes through to the matching FinancialSnapshot field.
+  rollupKey String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([projectId])
+  @@index([projectId, rollupKey])
 }
 
 // An uploaded document parsed into proposed field changes. The proposal is

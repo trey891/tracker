@@ -29,13 +29,16 @@ function refresh() {
   revalidatePath("/dashboard");
 }
 
-// Fields the financials editor exposes (kept in sync with the form).
+// Fields the financials editor exposes (kept in sync with the form). The 5
+// roll-up figures (currentBudget, costsToDate, projectedFinalCost,
+// contingencyBalance, overUnderBeforeContingency) are deliberately excluded —
+// they are owned by the protected roll-up rows and must not be nulled here.
 const FIN_FLOAT = [
-  "originalBudget", "approvedChanges", "reallocationsFromTI", "currentBudget",
+  "originalBudget", "approvedChanges", "reallocationsFromTI",
   "commitments", "nonContractedInvoiced", "ffeAllowance", "currentCommitments", "uncommittedBudget",
-  "costsToDate", "unspentCommitments",
-  "allowances", "pendingCosPcos", "forecasted", "overUnderBeforeContingency",
-  "projectedFinalCost", "contingencyNeeded", "contingencyBalance", "trendingContingencyAtCompletion", "contractorContingency",
+  "unspentCommitments",
+  "allowances", "pendingCosPcos", "forecasted",
+  "contingencyNeeded", "trendingContingencyAtCompletion", "contractorContingency",
   "pcosApprovedPendingCo", "pcosPending", "totalPcos", "cosApproved", "totalCos",
   "softCostBudget", "softCostCommitments", "softCostContingency", "softCostUncommitted", "softCostContingencyBalance",
   "equityBudget", "equityRequested", "loanBudget", "loanRequested",

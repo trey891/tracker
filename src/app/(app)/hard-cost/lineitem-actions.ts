@@ -16,6 +16,19 @@ function num(raw: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+// The fixed roll-up figures the Development Dashboard aggregates. Rows tagged
+// with one of these keys are protected (no delete/reorder/rename) and their
+// value writes through to the matching FinancialSnapshot field.
+const ROLLUP_KEYS = [
+  "currentBudget",
+  "costsToDate",
+  "projectedFinalCost",
+  "contingencyBalance",
+  "overUnderBeforeContingency",
+] as const;
+const isRollupKey = (k: string | null | undefined): k is (typeof ROLLUP_KEYS)[number] =>
+  !!k && (ROLLUP_KEYS as readonly string[]).includes(k);
+
 function refresh() {
   revalidatePath("/hard-cost");
   revalidatePath("/dashboard");
@@ -25,8 +38,32 @@ function refresh() {
 // ---- Value edit (contributor) ----
 export async function setLineItemValue(id: string, raw: string) {
   await requireAccess("contributor");
-  await prisma.financialLineItem.update({ where: { id }, data: { value: num(raw) } });
+  const value = num(raw);
+  const item = await prisma.financialLineItem.update({
+    where: { id },
+    data: { value },
+    select: { projectId: true, rollupKey: true },
+  });
+  // A roll-up row is the single source for its figure: write it through to the
+  // latest snapshot so the (read-only) Development Dashboard stays in sync.
+  if (isRollupKey(item.rollupKey)) {
+    const fin = await prisma.financialSnapshot.findFirst({
+      where: { projectId: item.projectId },
+      orderBy: { asOfDate: "desc" },
+    });
+    if (fin) {
+      await prisma.financialSnapshot.update({ where: { id: fin.id }, data: { [item.rollupKey]: value } as never });
+    } else {
+      await prisma.financialSnapshot.create({ data: { projectId: item.projectId, asOfDate: new Date(), [item.rollupKey]: value } as never });
+    }
+  }
   refresh();
+}
+
+// Roll-up rows are structurally locked; only their value may change.
+async function assertNotRollup(id: string, verb: string) {
+  const item = await prisma.financialLineItem.findUnique({ where: { id }, select: { rollupKey: true } });
+  if (item?.rollupKey) throw new Error(`Roll-up rows can't be ${verb} — they feed the Development Dashboard.`);
 }
 
 // ---- Structure (admin only) ----
@@ -51,6 +88,7 @@ export async function updateLineItemMeta(formData: FormData) {
   await requireAccess("admin");
   const id = String(formData.get("id") ?? "");
   if (!id) throw new Error("Missing id");
+  await assertNotRollup(id, "renamed");
   const label = String(formData.get("label") ?? "").trim();
   if (!label) throw new Error("Label is required");
   const section = String(formData.get("section") ?? "").trim() || "Hard Cost Budget → Forecast";
@@ -61,6 +99,7 @@ export async function updateLineItemMeta(formData: FormData) {
 
 export async function deleteLineItem(id: string) {
   await requireAccess("admin");
+  await assertNotRollup(id, "deleted");
   await prisma.financialLineItem.delete({ where: { id } });
   refresh();
 }
@@ -70,10 +109,12 @@ export async function moveLineItem(id: string, dir: "up" | "down") {
   await requireAccess("admin");
   const item = await prisma.financialLineItem.findUnique({ where: { id } });
   if (!item) throw new Error("Not found");
+  if (item.rollupKey) throw new Error("Roll-up rows can't be moved — they feed the Development Dashboard.");
   const neighbor = await prisma.financialLineItem.findFirst({
     where: {
       projectId: item.projectId,
       section: item.section,
+      rollupKey: null, // never reorder against a protected roll-up row
       order: dir === "up" ? { lt: item.order } : { gt: item.order },
     },
     orderBy: { order: dir === "up" ? "desc" : "asc" },
