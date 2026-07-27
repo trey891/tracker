@@ -69,7 +69,7 @@ export default async function HardCostPage() {
         action={
           canEdit ? (
             <div className="flex items-center gap-2">
-              <ImportButton hint="payapp" label="Import" />
+              <ImportButton hint="drawbudget" label="Import" />
               <EditFinancialsButton initial={finInitial} asOfDate={iso(f?.asOfDate ?? null)} />
             </div>
           ) : undefined

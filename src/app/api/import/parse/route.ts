@@ -36,7 +36,10 @@ export async function POST(request: Request) {
   let proposal: Proposal | null = null;
 
   try {
-    if (ext === "pdf" || hint === "payapp") {
+    // Branch by file type FIRST so a spreadsheet is never handed to the PDF
+    // parser. The "payapp" hint only forces the PDF path for an extension-less
+    // upload — a real .xlsx/.xls/.csv always routes to its own parser.
+    if (ext === "pdf" || (!ext && hint === "payapp")) {
       const text = await extractPdfText(new Uint8Array(buf));
       const g = parseG702(text);
       if (!g) {
