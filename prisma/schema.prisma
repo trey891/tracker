@@ -74,6 +74,7 @@ model Project {
 
   tasks           Task[]
   financials      FinancialSnapshot[]
+  financialLineItems FinancialLineItem[]
   pcoSummary      PcoSummary?
   pcoBuckets      PcoStatusBucket[]
   pcoReasons      PcoReason[]
@@ -87,6 +88,25 @@ model Project {
   weeklyStatus    WeeklyStatus[]
   attachments     Attachment[]
   imports         ImportBatch[]
+}
+
+// Per-project custom rows for the Hard Cost Budget → Forecast summary. Each
+// project shapes its own breakdown (labels/order); the 5 canonical roll-up
+// figures stay on FinancialSnapshot so the Development Dashboard is unaffected.
+// Admins manage the structure; contributors edit the values.
+model FinancialLineItem {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  section   String   @default("Hard Cost Budget → Forecast") // group header
+  label     String
+  value     Float?
+  emphasis  Boolean  @default(false) // bold subtotal rows (Current Budget, Projected Final…)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 // An uploaded document parsed into proposed field changes. The proposal is

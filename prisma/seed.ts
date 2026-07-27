@@ -55,6 +55,48 @@ async function backfill(data: Json) {
     });
     console.log(`  backfilled ${(data.pcos as Json[]).length} PCO line items`);
   }
+
+  await backfillLineItems();
+}
+
+// Default rows for the per-project "Hard Cost Budget → Forecast" summary,
+// seeded from whatever the project's latest snapshot has so the page isn't
+// blank. Admins then rename/reorder to match each project's real breakdown.
+const LINE_ITEM_TEMPLATE: { field: string; label: string; emphasis?: boolean }[] = [
+  { field: "originalBudget", label: "Original Budget (A)" },
+  { field: "approvedChanges", label: "Approved Changes (B)" },
+  { field: "currentBudget", label: "Current Budget (D)", emphasis: true },
+  { field: "currentCommitments", label: "Current Commitments (H)" },
+  { field: "uncommittedBudget", label: "Uncommitted Budget (I)" },
+  { field: "costsToDate", label: "Costs to Date (J)" },
+  { field: "unspentCommitments", label: "Unspent Commitments (K)" },
+  { field: "pendingCosPcos", label: "Pending COs & PCOs (M)" },
+  { field: "projectedFinalCost", label: "Projected Final Cost (P)", emphasis: true },
+  { field: "overUnderBeforeContingency", label: "Over / (Under) before Contingency" },
+  { field: "contingencyBalance", label: "HC Contingency Balance (R)" },
+  { field: "contractorContingency", label: "Contractor Contingency (T)" },
+];
+
+// Idempotent: only seeds line items for projects that have none yet.
+async function backfillLineItems() {
+  const projects = await prisma.project.findMany({ select: { id: true } });
+  for (const p of projects) {
+    const count = await prisma.financialLineItem.count({ where: { projectId: p.id } });
+    if (count > 0) continue;
+    const fin = await prisma.financialSnapshot.findFirst({ where: { projectId: p.id }, orderBy: { asOfDate: "desc" } });
+    const finRec = fin as Record<string, number | null> | null;
+    await prisma.financialLineItem.createMany({
+      data: LINE_ITEM_TEMPLATE.map((t, i) => ({
+        projectId: p.id,
+        section: "Hard Cost Budget → Forecast",
+        label: t.label,
+        value: finRec?.[t.field] ?? null,
+        emphasis: !!t.emphasis,
+        order: i,
+      })),
+    });
+    console.log(`  backfilled ${LINE_ITEM_TEMPLATE.length} financial line items for project ${p.id}`);
+  }
 }
 
 async function main() {
@@ -312,6 +354,8 @@ async function main() {
     `✓ ${data.milestones.length} milestones, ${data.designIssuances.length} design issuances, ` +
       `${data.lookahead.length} lookahead, ${data.weeklyStatus.length} weekly snapshots`,
   );
+
+  await backfillLineItems();
 
   console.log(`\nDone. Project "${project.name}" seeded.`);
   console.log(`Team login password: "${seedPassword}"  (change after first login)`);

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getPrimaryProject, getLatestFinancials } from "@/lib/data";
 import { Topbar } from "@/components/Topbar";
 import { NoProject } from "@/components/EmptyState";
-import { money, pct, shortDate } from "@/lib/format";
+import { money, shortDate } from "@/lib/format";
 import {
   EditFinancialsButton,
   AddCommitmentButton,
@@ -12,6 +12,7 @@ import {
   MilestoneActions,
 } from "@/components/HardCostEditors";
 import { ImportButton } from "@/components/ImportDialog";
+import { FinancialSummary } from "@/components/FinancialSummary";
 import { ScrollX } from "@/components/ScrollX";
 
 export const dynamic = "force-dynamic";
@@ -41,10 +42,11 @@ export default async function HardCostPage() {
     );
   }
 
-  const [fin, commitments, milestones] = await Promise.all([
+  const [fin, commitments, milestones, lineItems] = await Promise.all([
     getLatestFinancials(project.id),
     prisma.commitment.findMany({ where: { projectId: project.id }, orderBy: { totalContract: "desc" } }),
     prisma.milestone.findMany({ where: { projectId: project.id }, orderBy: { seq: "asc" } }),
+    prisma.financialLineItem.findMany({ where: { projectId: project.id }, orderBy: { order: "asc" } }),
   ]);
 
   const f = fin;
@@ -58,6 +60,9 @@ export default async function HardCostPage() {
   const milestoneDtos = milestones.map((m) => ({
     id: m.id, seq: m.seq, description: m.description,
     baseDate: iso(m.baseDate), contractDate: iso(m.contractDate), currentDate: iso(m.currentDate), varianceDays: m.varianceDays,
+  }));
+  const lineItemDtos = lineItems.map((l) => ({
+    id: l.id, section: l.section, label: l.label, value: l.value, emphasis: l.emphasis, order: l.order,
   }));
 
   return (
@@ -76,32 +81,33 @@ export default async function HardCostPage() {
         }
       />
 
+      {/* Roll-up figures — always present, feed the Development Dashboard */}
+      <section className="card card-pad mb-4">
+        <div className="flex items-center justify-between">
+          <span className="eyebrow">Portfolio roll-up</span>
+          <span className="rounded-full bg-brand/10 px-2.5 py-0.5 text-[11px] font-medium text-brand-soft ring-1 ring-brand/30">
+            Rolls up to Development Dashboard
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+          <Rollup label="Current Budget" value={money(f?.currentBudget, { compact: true })} />
+          <Rollup label="Costs to Date" value={money(f?.costsToDate, { compact: true })} />
+          <Rollup label="Projected Final" value={money(f?.projectedFinalCost, { compact: true })} />
+          <Rollup label="Contingency" value={money(f?.contingencyBalance, { compact: true })} tone="good" />
+          <Rollup
+            label="Over / (Under)"
+            value={money(f?.overUnderBeforeContingency, { compact: true })}
+            tone={(f?.overUnderBeforeContingency ?? 0) > 0 ? "bad" : "good"}
+          />
+        </div>
+        {canEdit && (
+          <p className="mt-3 text-xs text-slate-500">Edit these via “Edit financials”. They are the figures the executive portfolio aggregates.</p>
+        )}
+      </section>
+
       {/* Budget waterfall */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <section className="card card-pad lg:col-span-2">
-          <span className="eyebrow">Hard cost budget → forecast</span>
-          <h2 className="mb-4 mt-1 text-lg font-semibold text-white">Financial summary</h2>
-          <dl className="divide-y divide-line/60">
-            <Row label="Original Budget (A)" value={money(f?.originalBudget)} />
-            <Row label="Approved Changes (B)" value={money(f?.approvedChanges)} />
-            <Row label="Reallocations from TI (C)" value={money(f?.reallocationsFromTI)} />
-            <Row label="Current Budget (D = A+B+C)" value={money(f?.currentBudget)} strong />
-            <Row label="Current Commitments (H)" value={money(f?.currentCommitments)} />
-            <Row label="Uncommitted Budget (I = D−H)" value={money(f?.uncommittedBudget)} />
-            <Row label="Costs Incurred to Date (J)" value={money(f?.costsToDate)} />
-            <Row label="Unspent Commitments (K = H−J)" value={money(f?.unspentCommitments)} />
-            <Row label="Pending COs & PCOs (M)" value={money(f?.pendingCosPcos)} />
-            <Row label="Projected Final Cost (P)" value={money(f?.projectedFinalCost)} strong />
-            <Row
-              label="Over / (Under) Budget before Contingency"
-              value={money(f?.overUnderBeforeContingency)}
-              tone={(f?.overUnderBeforeContingency ?? 0) > 0 ? "bad" : "good"}
-            />
-            <Row label="HC Contingency Balance (R)" value={money(f?.contingencyBalance)} tone="good" />
-            <Row label="Trending Contingency @ Completion (S)" value={money(f?.trendingContingencyAtCompletion)} tone="good" />
-            <Row label="Contractor Contingency (T)" value={money(f?.contractorContingency)} />
-          </dl>
-        </section>
+        <FinancialSummary items={lineItemDtos} canEditValues={canEdit} isAdmin={access === "admin"} />
 
         <div className="space-y-4">
           <section className="card card-pad">
@@ -220,12 +226,12 @@ export default async function HardCostPage() {
   );
 }
 
-function Row({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: "good" | "bad" }) {
-  const color = tone === "good" ? "text-status-ontrack" : tone === "bad" ? "text-status-blocked" : strong ? "text-white" : "text-slate-200";
+function Rollup({ label, value, tone }: { label: string; value: string; tone?: "good" | "bad" }) {
+  const color = tone === "good" ? "text-status-ontrack" : tone === "bad" ? "text-status-blocked" : "text-white";
   return (
-    <div className="flex items-center justify-between py-2.5">
-      <dt className={`text-sm ${strong ? "font-semibold text-white" : "text-slate-400"}`}>{label}</dt>
-      <dd className={`text-sm font-semibold tabular-nums ${color}`}>{value}</dd>
+    <div className="rounded-lg bg-panel-2/60 px-3 py-2.5">
+      <div className={`text-base font-semibold tabular-nums ${color}`}>{value}</div>
+      <div className="mt-0.5 text-[11px] text-slate-400">{label}</div>
     </div>
   );
 }
