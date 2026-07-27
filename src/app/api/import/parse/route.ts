@@ -243,36 +243,62 @@ async function buildDrawBudget(projectId: string, buf: ArrayBuffer): Promise<Pro
     warnings.push("No financial snapshot found for this project.");
   }
 
-  // GC/Construction line → Beck commitment
+  // GC/Construction line → the project's GC commitment. Match an existing one
+  // (GC / Beck / Construction), otherwise propose creating it so a brand-new
+  // project still populates from the export.
   if (result.gc) {
-    const beck = await prisma.commitment.findFirst({
-      where: { projectId, vendor: { contains: "BECK", mode: "insensitive" } },
+    const g = result.gc;
+    const gcCommit = await prisma.commitment.findFirst({
+      where: {
+        projectId,
+        OR: [
+          { vendor: { contains: "beck", mode: "insensitive" } },
+          { vendor: { contains: "gc", mode: "insensitive" } },
+          { vendor: { contains: "construction", mode: "insensitive" } },
+        ],
+      },
       orderBy: { totalContract: "desc" },
     });
-    if (beck) {
-      const g = result.gc;
+    if (gcCommit) {
       const c = (field: string, label: string, cur: number | null, val: number | null) => {
         if (val == null) return;
         changes.push({
           key: `commitment.${field}`,
           target: "commitment",
           op: "update",
-          entityId: beck.id,
+          entityId: gcCommit.id,
           field,
           value: val,
-          label: `Beck — ${label}`,
+          label: `${gcCommit.vendor} — ${label}`,
           currentDisplay: usd(cur),
           proposedDisplay: usd(val),
           changed: !near(cur, val),
         });
       };
-      c("originalContract", "Original Contract", beck.originalContract, g.original);
-      c("changeOrderAmount", "Change Orders", beck.changeOrderAmount, g.changeOrder);
-      c("totalContract", "Total Contract", beck.totalContract, g.total);
-      c("invoiced", "Invoiced", beck.invoiced, g.invoiced);
-      c("remaining", "Remaining", beck.remaining, g.remaining);
+      c("originalContract", "Original Contract", gcCommit.originalContract, g.original);
+      c("changeOrderAmount", "Change Orders", gcCommit.changeOrderAmount, g.changeOrder);
+      c("totalContract", "Total Contract", gcCommit.totalContract, g.total);
+      c("invoiced", "Invoiced", gcCommit.invoiced, g.invoiced);
+      c("remaining", "Remaining", gcCommit.remaining, g.remaining);
     } else {
-      warnings.push("No 'Beck' commitment found — the GC/Construction line will be skipped.");
+      changes.push({
+        key: "commitment.create.gc",
+        target: "commitment",
+        op: "create",
+        record: {
+          vendor: "GC / Construction",
+          status: "Approved",
+          originalContract: g.original,
+          changeOrderAmount: g.changeOrder,
+          totalContract: g.total,
+          invoiced: g.invoiced,
+          remaining: g.remaining,
+        },
+        label: "GC / Construction (new commitment)",
+        currentDisplay: "new",
+        proposedDisplay: `${usd(g.total)} contract · ${usd(g.invoiced)} invoiced`,
+        changed: true,
+      });
     }
   }
 

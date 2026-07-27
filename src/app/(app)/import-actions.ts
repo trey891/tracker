@@ -26,9 +26,11 @@ export async function applyImport(batchId: string, acceptedKeys: string[]) {
   const commitData: Record<string, Record<string, unknown>> = {};
   const pcoUpdates: { id: string; data: Record<string, unknown> }[] = [];
   const pcoCreates: Change[] = [];
+  const commitCreates: Change[] = [];
 
   for (const c of changes) {
     if (c.target === "financials" && c.entityId && c.field) (finData[c.entityId] ??= {})[c.field] = c.value;
+    else if (c.target === "commitment" && c.op === "create" && c.record) commitCreates.push(c);
     else if (c.target === "commitment" && c.entityId && c.field) (commitData[c.entityId] ??= {})[c.field] = c.value;
     else if (c.target === "pco" && c.op === "update" && c.entityId) pcoUpdates.push({ id: c.entityId, data: c.record ?? {} });
     else if (c.target === "pco" && c.op === "create" && c.record) pcoCreates.push(c);
@@ -39,6 +41,23 @@ export async function applyImport(batchId: string, acceptedKeys: string[]) {
   for (const [id, data] of Object.entries(finData)) ops.push(prisma.financialSnapshot.update({ where: { id }, data: data as never }));
   for (const [id, data] of Object.entries(commitData)) ops.push(prisma.commitment.update({ where: { id }, data: data as never }));
   for (const u of pcoUpdates) ops.push(prisma.pco.update({ where: { id: u.id }, data: u.data as never }));
+  for (const c of commitCreates) {
+    const r = c.record as Record<string, unknown>;
+    ops.push(
+      prisma.commitment.create({
+        data: {
+          projectId,
+          vendor: (r.vendor as string) ?? "GC / Construction",
+          status: (r.status as string) ?? "Approved",
+          originalContract: (r.originalContract as number) ?? null,
+          changeOrderAmount: (r.changeOrderAmount as number) ?? null,
+          totalContract: (r.totalContract as number) ?? null,
+          invoiced: (r.invoiced as number) ?? null,
+          remaining: (r.remaining as number) ?? null,
+        },
+      }),
+    );
+  }
   await Promise.all(ops);
 
   if (pcoCreates.length) {
