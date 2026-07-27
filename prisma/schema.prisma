@@ -103,9 +103,14 @@ model FinancialLineItem {
   value     Float?
   emphasis  Boolean  @default(false) // bold subtotal rows (Current Budget, Projected Final…)
   order     Int      @default(0)
+  // When set, this row is a window into a FinancialSnapshot field: its value is
+  // read from (and written back to) that field, so imports and the Edit
+  // financials modal flow into the summary automatically. Null = a free custom
+  // row that stores its own `value`.
+  field     String?
   // When set, this row is one of the fixed roll-up figures the Development
-  // Dashboard aggregates. Such rows are protected (no delete/reorder/rename) and
-  // their value writes through to the matching FinancialSnapshot field.
+  // Dashboard aggregates. Such rows are protected (no delete/reorder/rename).
+  // For roll-up rows, `field == rollupKey`.
   rollupKey String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

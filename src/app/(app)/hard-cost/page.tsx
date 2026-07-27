@@ -61,8 +61,13 @@ export default async function HardCostPage() {
     id: m.id, seq: m.seq, description: m.description,
     baseDate: iso(m.baseDate), contractDate: iso(m.contractDate), currentDate: iso(m.currentDate), varianceDays: m.varianceDays,
   }));
+  // Field-linked rows are windows into the snapshot, so imports and modal edits
+  // show up automatically; unlinked (custom) rows keep their own stored value.
+  const finRecord = f as unknown as Record<string, number | null> | null;
   const lineItemDtos = lineItems.map((l) => ({
-    id: l.id, section: l.section, label: l.label, value: l.value, emphasis: l.emphasis, order: l.order, rollupKey: l.rollupKey,
+    id: l.id, section: l.section, label: l.label,
+    value: l.field ? (finRecord?.[l.field] ?? null) : l.value,
+    emphasis: l.emphasis, order: l.order, rollupKey: l.rollupKey,
   }));
 
   return (

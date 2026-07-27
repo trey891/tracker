@@ -21,9 +21,6 @@ export type LineItemDTO = {
   rollupKey: string | null;
 };
 
-// Fixed display order for the protected roll-up rows.
-const ROLLUP_ORDER = ["currentBudget", "costsToDate", "projectedFinalCost", "contingencyBalance", "overUnderBeforeContingency"];
-
 // Per-project Hard Cost Budget → Forecast summary. Contributors edit values
 // inline; admins manage the structure (add / rename / reorder / delete).
 export function FinancialSummary({
@@ -38,18 +35,15 @@ export function FinancialSummary({
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<LineItemDTO | null>(null);
 
-  // Protected roll-up rows first, in fixed key order.
-  const rollupRows = items
-    .filter((it) => it.rollupKey)
-    .sort((a, b) => ROLLUP_ORDER.indexOf(a.rollupKey!) - ROLLUP_ORDER.indexOf(b.rollupKey!));
-
-  // Custom rows grouped by section (first-seen order), sorted by `order`.
+  // Single interleaved list: group by section (first-seen order), rows sorted by
+  // `order`. Roll-up rows sit in their natural position, just locked.
   const sections: { name: string; rows: LineItemDTO[] }[] = [];
-  for (const it of items.filter((x) => !x.rollupKey).sort((a, b) => a.order - b.order)) {
+  for (const it of [...items].sort((a, b) => a.order - b.order)) {
     let s = sections.find((x) => x.name === it.section);
     if (!s) sections.push((s = { name: it.section, rows: [] }));
     s.rows.push(it);
   }
+  const hasRollup = items.some((it) => it.rollupKey);
 
   return (
     <section className="card card-pad lg:col-span-2">
@@ -65,52 +59,51 @@ export function FinancialSummary({
         )}
       </div>
 
-      {/* Protected roll-up figures */}
-      {rollupRows.length > 0 && (
-        <div className="mt-2">
-          <div className="mb-1 flex items-center gap-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-600">Roll-up</span>
-            <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium text-brand-soft ring-1 ring-brand/30">
-              Feeds Development Dashboard
-            </span>
-          </div>
-          <dl className="divide-y divide-line/60">
-            {rollupRows.map((it) => (
-              <LineRow key={it.id} item={it} canEditValues={canEditValues} isAdmin={isAdmin} locked />
-            ))}
-          </dl>
-        </div>
-      )}
-
-      {/* Custom project-specific rows */}
-      {sections.map((s) => (
-        <div key={s.name} className="mt-4">
-          <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-600">{s.name}</div>
-          <dl className="divide-y divide-line/60">
-            {s.rows.map((it, i) => (
-              <LineRow
-                key={it.id}
-                item={it}
-                canEditValues={canEditValues}
-                isAdmin={isAdmin}
-                isFirst={i === 0}
-                isLast={i === s.rows.length - 1}
-                onEdit={() => setEditing(it)}
-              />
-            ))}
-          </dl>
-        </div>
-      ))}
-
-      {sections.length === 0 && rollupRows.length === 0 && (
+      {sections.length === 0 ? (
         <p className="py-6 text-sm text-slate-500">
           No line items yet.{isAdmin ? " Add lines to match this project's budget breakdown." : ""}
+        </p>
+      ) : (
+        sections.map((s) => (
+          <div key={s.name} className="mt-4 first:mt-2">
+            {sections.length > 1 && (
+              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-slate-600">{s.name}</div>
+            )}
+            <dl className="divide-y divide-line/60">
+              {s.rows.map((it, i) => (
+                <LineRow
+                  key={it.id}
+                  item={it}
+                  canEditValues={canEditValues}
+                  isAdmin={isAdmin}
+                  isFirst={i === 0}
+                  isLast={i === s.rows.length - 1}
+                  onEdit={() => setEditing(it)}
+                  locked={!!it.rollupKey}
+                />
+              ))}
+            </dl>
+          </div>
+        ))
+      )}
+
+      {hasRollup && (
+        <p className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500">
+          <LockIcon /> rows feed the Development Dashboard — locked from delete / rename / reorder.
         </p>
       )}
 
       {adding && <MetaModal onClose={() => setAdding(false)} />}
       {editing && <MetaModal item={editing} onClose={() => setEditing(null)} />}
     </section>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-600" aria-hidden>
+      <rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
   );
 }
 

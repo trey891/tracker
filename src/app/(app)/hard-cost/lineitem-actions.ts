@@ -16,18 +16,23 @@ function num(raw: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-// The fixed roll-up figures the Development Dashboard aggregates. Rows tagged
-// with one of these keys are protected (no delete/reorder/rename) and their
-// value writes through to the matching FinancialSnapshot field.
-const ROLLUP_KEYS = [
+// Snapshot fields a line item may mirror. A field-linked row reads/writes the
+// FinancialSnapshot field, so its value stays in one place (shared with imports,
+// the Edit financials modal, and the Development Dashboard).
+const ALLOWED_FIELDS = new Set<string>([
+  "originalBudget",
+  "approvedChanges",
   "currentBudget",
+  "currentCommitments",
+  "uncommittedBudget",
   "costsToDate",
+  "unspentCommitments",
+  "pendingCosPcos",
   "projectedFinalCost",
-  "contingencyBalance",
   "overUnderBeforeContingency",
-] as const;
-const isRollupKey = (k: string | null | undefined): k is (typeof ROLLUP_KEYS)[number] =>
-  !!k && (ROLLUP_KEYS as readonly string[]).includes(k);
+  "contingencyBalance",
+  "contractorContingency",
+]);
 
 function refresh() {
   revalidatePath("/hard-cost");
@@ -39,23 +44,28 @@ function refresh() {
 export async function setLineItemValue(id: string, raw: string) {
   await requireAccess("contributor");
   const value = num(raw);
-  const item = await prisma.financialLineItem.update({
+  const item = await prisma.financialLineItem.findUnique({
     where: { id },
-    data: { value },
-    select: { projectId: true, rollupKey: true },
+    select: { projectId: true, field: true, rollupKey: true },
   });
-  // A roll-up row is the single source for its figure: write it through to the
-  // latest snapshot so the (read-only) Development Dashboard stays in sync.
-  if (isRollupKey(item.rollupKey)) {
+  if (!item) throw new Error("Not found");
+
+  // A field-linked row (standard/roll-up) is a window into the snapshot: write
+  // the value there so imports, the Edit financials modal, and the Development
+  // Dashboard all stay in sync. A free custom row stores its own value.
+  const linked = item.field ?? item.rollupKey;
+  if (linked && ALLOWED_FIELDS.has(linked)) {
     const fin = await prisma.financialSnapshot.findFirst({
       where: { projectId: item.projectId },
       orderBy: { asOfDate: "desc" },
     });
     if (fin) {
-      await prisma.financialSnapshot.update({ where: { id: fin.id }, data: { [item.rollupKey]: value } as never });
+      await prisma.financialSnapshot.update({ where: { id: fin.id }, data: { [linked]: value } as never });
     } else {
-      await prisma.financialSnapshot.create({ data: { projectId: item.projectId, asOfDate: new Date(), [item.rollupKey]: value } as never });
+      await prisma.financialSnapshot.create({ data: { projectId: item.projectId, asOfDate: new Date(), [linked]: value } as never });
     }
+  } else {
+    await prisma.financialLineItem.update({ where: { id }, data: { value } });
   }
   refresh();
 }
